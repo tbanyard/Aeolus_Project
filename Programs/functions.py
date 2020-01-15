@@ -1,8 +1,34 @@
+#!/usr/bin/env python3
+"""
+Aeolus Functions file
+================================================================================
+--------------------------------------------------------------------------------
+----------------------------No version control----------------------------------
+--------------------------------------------------------------------------------
+================================================================================
+Provides functions for all files for the Aeolus project
+================================================================================
+"""
+
+# Imports
+import netCDF4 as nc
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.dates as dates
+import os
+import errno
+from datetime import timedelta, datetime
+from scipy.interpolate import griddata
+import calendar
+import time
+import coda
+
+
 def load_hdr_tags(hdr):
 	# Open HDR file
 	pfhdr = coda.open(hdr)
 	
-	# Get field names and fetch data according to the document:
+	# Get field names and fetch data according to the ICD document:
 	# L-2B/2C_I/O_Data_Definitions
 	Earth_Explorer_Header = coda.fetch(pfhdr, 'Earth_Explorer_Header')
 	
@@ -241,7 +267,7 @@ def load_dbl_tags(dbl):
 	Intersect_Stop_Long = coda.fetch(pf, 'sph/Intersect_Stop_Long')
 	Sat_Track = coda.fetch(pf, 'sph/Sat_Track')
 	
-	#		 Counts
+	#	 Counts
 	Valid_Mie_Profile_Count = coda.fetch(pf, 'sph/Valid_Mie_Profile_Count')
 	Valid_Rayleigh_Profile_Count = coda.fetch(pf, 'sph/Valid_Rayleigh_Profile_Count')
 	Invalid_Mie_Profile_Count = coda.fetch(pf, 'sph/Invalid_Mie_Profile_Count')
@@ -252,6 +278,50 @@ def load_dbl_tags(dbl):
 	Valid_L2B_Rayleigh_Wind_Count = coda.fetch(pf, 'sph/Valid_L2B_Rayleigh_Wind_Count')
 	Invalid_L2B_Mie_Wind_Count = coda.fetch(pf, 'sph/Invalid_L2B_Mie_Wind_Count')
 	Invalid_L2B_Rayleigh_Wind_Count = coda.fetch(pf, 'sph/Invalid_L2B_Rayleigh_Wind_Count')
+	
+	# Dsds
+	Dsd = coda.fetch(pf, 'dsd')
+	# print((coda.fetch(pf, 'dsd'), 0)[0][0]) ~ Use this format to retrieve coda records
+	
+	# Measurement_Maps [These relate the L1B measurements to the L2B wind retrievals]
+	Meas_Map = coda.fetch(pf, 'meas_map')
+	# ~ Meas_Map_ADS_measurement = coda.fetch(pf, 'meas_map', m)
+	Mie_Map_of_L1B_Meas_Used = coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used')
+	"""Access via Mie_Map_of_L1B_Meas_Used[m][n], or:"""
+	# ~ Mie_Map_of_L1B_Meas_Used_measurement = coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used', n)
+	Rayleigh_Map_of_L1B_Meas_Used = coda.fetch(pf, 'meas_map', -1, 'rayleigh_map_of_l1b_meas_used')
+	"""Access via Rayleigh_Map_of_L1B_Meas_Used[m][n], or:"""
+	# ~ Rayleigh_Map_of_L1B_Meas_Used = coda.fetch(pf, 'meas_map', -1, 'rayleigh_map_of_l1b_meas_used', n)
+	
+	#	 Subrecords:
+	# Bin = coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used', n)[m]
+	# Which_L2B_Wind_id = coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used', n)[m][0]
+	# Weight = coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used', n)[m][1]
+	"""[Here n is in range(24) and m is in len(Mie_Map_of_L1B_Meas_Used) = NumMeasurements]"""
+	
+	# Mie and Rayleigh Grouping
+	Mie_Grouping = coda.fetch(pf, 'mie_grouping')
+	"""Access via Mie_Grouping[l][PI]"""
+	Rayleigh_Grouping = coda.fetch(pf, 'rayleigh_grouping')
+	"""Access via Rayleigh_Grouping[l][PI]"""
+	"""[Here, l is the length of the grouping array and PI is the python index corresponding
+	to the tags in Table 19 in the ICD]"""
+	
+	# Mie and Rayleigh Geolocation
+	Mie_Geolocation = coda.fetch(pf, 'mie_geolocation')
+	Rayleigh_Geolocation = coda.fetch(pf, 'rayleigh_geolocation')
+	
+	# Confidence Data
+	AMD_Product_Confid_Data = coda.fetch(pf, 'amd_product_confid_data')
+	Meas_Product_Confid_Data = coda.fetch(pf, 'meas_product_confid_data')
+	Mie_Wind_Prod_Conf_Data = coda.fetch(pf, 'mie_wind_prod_conf_data')
+	Rayleigh_Wind_Prod_Conf_Data = coda.fetch(pf, 'rayleigh_wind_prod_conf_data')
+	
+	# Mie_HLOS_Wind
+	Mie_HLOS_Wind = coda.fetch(pf, 'mie_hloswind')
+	Rayleigh_HLOS_Wind = coda.fetch(pf, 'rayleigh_hloswind')
+	Mie_Profile = coda.fetch(pf, 'mie_profile')
+	Rayleigh_Profile = coda.fetch(pf, 'rayleigh_profile')
 	
 	return Product, Proc_Stage,	Ref_Doc, Acquisition_Station, \
 	Proc_Center, Proc_Time, Software_Ver, Baseline, Sensing_Start, \
@@ -268,16 +338,9 @@ def load_dbl_tags(dbl):
 	Invalid_Mie_Profile_Count, Invalid_Rayleigh_Profile_Count, \
 	Num_Profiles_Surface_Mie, Num_Profiles_Surface_Ray, \
 	Valid_L2B_Mie_Wind_Count, Valid_L2B_Rayleigh_Wind_Count, \
-	Invalid_L2B_Mie_Wind_Count, Invalid_L2B_Rayleigh_Wind_Count, List_of_Dsds, \
-	Dsd, Meas_Map_ADS, Mie_Grouping_ADS, Rayleigh_Grouping_Map, Mie_Geolocation_ADS, \
-	Rayleigh_Geolocation_ADS, AMD_Product_Confid_Data_ADS, \
-	Meas_Product_Confid_Data_ADS, Mie_Wind_Product_Conf_Data_ADS, \
-	Rayl_Wind_Prod_Conf_Data_ADS, Mie_Wind_MDS, Rayleigh_Wind_MDS, \
-	Mie_Profile_MDS, Rayleigh_Profile_MDS, Aeolus_Level_1B_Product, \
-	Aux_Met_Product, Aeolus_RBC, Clim_Product, Cal_Product, \
-	Level_2B_Proc_Params
-	
-	"""Continue exploring the below tomorrow:
-	coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used')
-	coda.fetch(pf, 'meas_map', -1, 'mie_map_of_l1b_meas_used', 0)
-	"""
+	Invalid_L2B_Mie_Wind_Count, Invalid_L2B_Rayleigh_Wind_Count, \
+	Dsd, Meas_Map, Mie_Map_of_L1B_Meas_Used, Rayleigh_Map_of_L1B_Meas_Used, \
+	Mie_Grouping, Rayleigh_Grouping, Mie_Geolocation, Rayleigh_Geolocation, \
+	AMD_Product_Confid_Data, Meas_Product_Confid_Data, Mie_Wind_Prod_Conf_Data, \
+	Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, Rayleigh_HLOS_Wind, Mie_Profile, \
+	Rayleigh_Profile
