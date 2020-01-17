@@ -25,7 +25,9 @@ from datetime import datetime
 # Import from functions file
 import sys
 sys.path.append('/home/tpb38/PhD/Bath/')
+sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs')
 from phdfunctions import timeseriesplot
+from functions import load_hdr_tags, load_dbl_tags
 from scipy.interpolate import griddata
 
 dbl = '/home/tpb38/PhD/Bath/Aeolus/DATA/'
@@ -36,6 +38,10 @@ hdr += 'AE_OPER_ALD_U_N_2B_20191216T070123_20191216T083159_0001.HDR'
 # Opening Files
 pf = coda.open(dbl)
 pfhdr = coda.open(hdr)
+
+# Load tags
+load_hdr = False
+load_dbl = True
 
 # Fetching Data
 mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1, 'windresult/mie_wind_velocity')
@@ -63,15 +69,15 @@ os.chdir('..')
 os.chdir('..')
 os.chdir('Plots')
 
-X = date_time[11500:21500]	#[11500:21500] [11500:12500]
-Y = altitude[11500:21500]
-Y2 = latitude[11500:21500]
-Y3 = longitude[11500:21500]
-Y4 = mie_wind_velocity[11500:21500]
-# ~ variable = 'Altitude'
-# ~ variable2 = 'Latitude'
-# ~ timeseriesplot(X, Y, Y2, plottitle = 'Variation in Aeolus\' longitude with latitude during a two minute period', date_form = '%H:%M:%S', minor_date_form = '%M:%S', data_type = 'coda', size = 0.5, color = 'black', marker = '+', variable = variable, variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
-# ~ plt.savefig("timeseries.png", dpi=300)
+X = date_time[11500:12500]	#[11500:21500] [11500:12500]
+Y = altitude[11500:12500]
+Y2 = latitude[11500:12500]
+Y3 = longitude[11500:12500]
+Y4 = mie_wind_velocity[11500:12500]
+variable = 'Altitude'
+variable2 = 'Latitude'
+timeseriesplot(X, Y3, Y2, plottitle = 'Variation in Aeolus\' longitude with latitude during a two minute period', date_form = '%H:%M', minor_date_form = '%M:%S', data_type = 'coda', size = 0.5, color = 'black', marker = '+', variable = variable, variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
+plt.savefig("timeseries.png", dpi=300)
 # ~ print(coda.time_to_string(date_time[21000]))
 
 # Initialise arrays

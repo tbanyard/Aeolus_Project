@@ -5,7 +5,8 @@ Aeolus scans testing file
 ------------------------------------------------------------------------
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Testing-------------------------------------------------------
-----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
+---v1.2---N.B. v1.0 and v1.1 array indices will no longer work----------
+----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .DBL files downloaded from the Aeolus database and produces a
@@ -105,31 +106,21 @@ if load_dbl == True:
 
 # Fetching Data
 rayleigh_wind_velocity = coda.fetch(pf, 'rayleigh_hloswind', -1, 'windresult/rayleigh_wind_velocity')
+rayleigh_latitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/latitude_cog')
+rayleigh_longitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/longitude_cog')
+rayleigh_altitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/altitude_vcog')
+rayleigh_date_time = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/datetime_cog')
 mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1, 'windresult/mie_wind_velocity')
-latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/latitude_cog')
-longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
-altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
-date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
+mie_latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/latitude_cog')
+mie_longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
+mie_altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
+mie_date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
 
 # Validity Flags
 Mie_Wind_Prod_Conf_Data = coda.fetch(pf, 'mie_wind_prod_conf_data')
 Rayleigh_Wind_Prod_Conf_Data = coda.fetch(pf, 'rayleigh_wind_prod_conf_data')
 Mie_HLOS_Wind = coda.fetch(pf, 'mie_hloswind')
 Rayleigh_HLOS_Wind = coda.fetch(pf, 'rayleigh_hloswind')
-
-# Retrieving Field Names
-field_names = coda.get_field_names(pf)
-mie_hloswind_field_names = coda.get_field_names(pf, 'mie_hloswind', 0)
-mie_geolocation_field_names = coda.get_field_names(pf, 'mie_geolocation', 0)
-windresult_geolocation_field_names = coda.get_field_names(pf, 'mie_geolocation', 0, 'windresult_geolocation')
-# ~ print(field_names)
-# ~ print(mie_hloswind_field_names)
-# ~ print(mie_geolocation_field_names)
-# ~ print(windresult_geolocation_field_names)
-
-# Arrays
-print(mie_wind_velocity.shape)
-# ~ print(mie_wind_velocity)
 
 # Mie Wind Product Confidence Data
 itrn1 = 0
@@ -216,25 +207,84 @@ for i in range(len(Rayleigh_HLOS_Wind)):
 
 print("Rayleigh HLOS Observation Type (Cloudy) = ", itrn11)
 print("Rayleigh HLOS Observation Type (Clear) = ", itrn12)
-	
 
+# Initialise arrays
+mie_times = []
+mie_alts = []
+mie_lats = []
+mie_lons = []
+mie_wvs = []
+rayleigh_times = []
+rayleigh_alts = []
+rayleigh_lats = []
+rayleigh_lons = []
+rayleigh_wvs = []
+
+for j in range(len(mie_date_time)):
+	observation_type = Mie_HLOS_Wind[j][2][1]
+	validity_flag = Mie_HLOS_Wind[j][2][2]
+	if observation_type == 1: # i.e. cloudy
+		if validity_flag == 1:
+			mie_times.append(mie_date_time[j])
+			mie_alts.append(mie_altitude[j])
+			mie_lats.append(mie_latitude[j])
+			mie_lons.append(mie_longitude[j])
+			mie_wvs.append(mie_wind_velocity[j])
+			
+for k in range(len(rayleigh_date_time)):
+	observation_type = Rayleigh_HLOS_Wind[k][2][1]
+	validity_flag = Rayleigh_HLOS_Wind[k][2][2]
+	if observation_type == 2: # i.e. clear
+		if validity_flag == 1:
+			rayleigh_times.append(rayleigh_date_time[k])
+			rayleigh_alts.append(rayleigh_altitude[k])
+			rayleigh_lats.append(rayleigh_latitude[k])
+			rayleigh_lons.append(rayleigh_longitude[k])
+			rayleigh_wvs.append(rayleigh_wind_velocity[k])
+			
 # Plotting data
 os.chdir('..')
 os.chdir('..')
 os.chdir('Plots')
 
-X = date_time[11500:21500]	#[11500:21500] [11500:12500]
-Y1 = altitude[11500:21500]
-Y2 = latitude[11500:21500]
-Y3 = longitude[11500:21500]
-Y4 = mie_wind_velocity[11500:21500]
-Y5 = rayleigh_wind_velocity[11500:21500]
-variable = 'Altitude'
+print(len(mie_times))
+
+
+X1 = mie_times[860:910]
+X2 = rayleigh_times
+Y1 = mie_alts[860:910]
+Y2 = mie_lats[860:910]
+Y3 = mie_lons[860:910]
+Y4 = mie_wvs[860:910]
+Y5 = rayleigh_alts
+Y6 = rayleigh_lats
+Y7 = rayleigh_lons
+Y8 = rayleigh_wvs
+variable = 'Longitude'
 variable2 = 'Latitude'
-timeseriesplot(X, Y1, Y2, plottitle = 'Variation in Aeolus\' longitude with latitude during a two minute period', date_form = '%H:%M:%S', minor_date_form = '%M:%S', data_type = 'coda', size = 0.5, color = 'black', marker = '+', variable = variable, variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
-plt.savefig("timeseries.png", dpi=300)
+# ~ timeseriesplot(X1, Y3, plottitle = 'Variation in Aeolus\' longitude and latitude \n during one full orbit for Mie (QC)', date_form = '%H:%M', minor_date_form = '%M:%S', data_type = 'coda', size = 0.5, color = 'black', marker = '+', variable = variable, variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
+# ~ plt.savefig("timeseries.png", dpi=300)
 # ~ print(coda.time_to_string(date_time[21000]))
 
+xi = np.linspace(rayleigh_times[0], rayleigh_times[-1], 100)
+yi = np.linspace(rayleigh_alts[0], rayleigh_alts[-1], 10)
+xi, yi = np.meshgrid(xi, yi)
+z = rayleigh_wvs
+zi = griddata((rayleigh_times, rayleigh_alts),z,(xi,yi),method='linear')
+# ~ zi[mask] = np.nan
+date_time = coda.time_to_utcstring(xi[:])
+date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])	
+fig = plt.figure()
+ax = fig.add_subplot(111)
+cs = plt.contourf(date_time,yi,zi, cmap='RdBu')
+# ~ plt.plot(rayleigh_times,rayleigh_alts,'k.')
+plt.xlabel('xi',fontsize=16)
+plt.ylabel('yi',fontsize=16)
+fig.colorbar(cs, cmap='RdBu', ax=ax, orientation='vertical')
+plt.savefig('interpolated.png',dpi=300)
+
+
+"""
 # Initialise arrays
 alts = []
 lats = []
@@ -257,7 +307,7 @@ xx,yy = np.meshgrid(X, Y1)
 # ~ print(xx)
 
 """	
-
+"""
 xi = np.linspace(date_time[0], date_time[-1], 1000)
 yi = np.linspace(0, 20000, 1000)
 Z = Y4
