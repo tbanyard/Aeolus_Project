@@ -6,7 +6,8 @@ Aeolus scans testing file
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Testing-------------------------------------------------------
 ---v1.2---N.B. v1.0 and v1.1 array indices will no longer work----------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------Plots a cross-section of HLOS winds for a single orbit--------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .DBL files downloaded from the Aeolus database and produces a
@@ -28,7 +29,7 @@ from datetime import datetime
 import sys
 sys.path.append('/home/tpb38/PhD/Bath/')
 sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs')
-from phdfunctions import timeseriesplot
+from phdfunctions import timeseriesplot, find_nearest
 from functions import load_hdr_tags, load_dbl_tags
 from scipy.interpolate import griddata
 
@@ -115,6 +116,10 @@ mie_latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/lat
 mie_longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
 mie_altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
 mie_date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
+
+# Mie and Rayleigh Grouping
+Mie_Grouping = coda.fetch(pf, 'mie_grouping')
+Rayleigh_Grouping = coda.fetch(pf, 'rayleigh_grouping')
 
 # Validity Flags
 Mie_Wind_Prod_Conf_Data = coda.fetch(pf, 'mie_wind_prod_conf_data')
@@ -247,9 +252,67 @@ os.chdir('..')
 os.chdir('..')
 os.chdir('Plots')
 
-print(len(mie_times))
+print("Mie Times has length: ", len(mie_times))
+print("Rayleigh Times has length: ", len(rayleigh_times))
+print("Rayleigh Grouping has length: ", len(Rayleigh_Grouping))
 
+for t in range(len(rayleigh_times)):
+	print(rayleigh_times[t])
 
+# ~ RG_elmnt = 0
+# ~ for t in range(len(rayleigh_times)):
+	# ~ if rayleigh_times[t] < Rayleigh_Grouping[RG_elmnt][1]:
+		# ~ print(rayleigh_times[t])
+	# ~ else:
+		# ~ RG_elmnt += 1
+
+# Convert list of Rayleigh Group start times into a sensible format
+RG = np.zeros(len(Rayleigh_Grouping))
+for g in range(len(RG)):
+	RG[g] = (Rayleigh_Grouping[g][1])
+
+# Initialise meshgrids for x, y and z
+alts = np.linspace(0,20000, 21)
+x, y = np.meshgrid(RG, alts)
+print(x)
+print(y)
+# ~ z = [[0 for _ in range(len(RG))] for _ in range(len(alts))] # Lists
+# ~ z_itrn = [[0 for _ in range(len(RG))] for _ in range(len(alts))]
+z = np.zeros((len(alts),len(RG))) # NumPy Arrays
+z_itrn = np.zeros((len(alts),len(RG)))
+print(np.shape(z))
+
+# Placing wind values into bins of height 1km and width 1 rayleigh group
+lastgroupstarttime = 0
+for RG_elmnt in range(len(RG)):
+	for t in range(len(rayleigh_times)):
+		# Find all elements inside this sandwich and add to z and z_itrn:
+		if rayleigh_times[t] < Rayleigh_Grouping[RG_elmnt][1] and rayleigh_times[t] >= lastgroupstarttime:
+			val = find_nearest(alts, rayleigh_alts[t]) # Find the nearest altitude level
+			alt_elmnt = np.where(alts == val)[0][0]
+			if np.abs(rayleigh_wvs[t]) < 10000: # Cap wind speeds to 100 m/s
+				z[alt_elmnt][RG_elmnt] += rayleigh_wvs[t]
+				z_itrn[alt_elmnt][RG_elmnt] += 1
+	lastgroupstarttime = Rayleigh_Grouping[RG_elmnt][1]
+
+# Find the mean for each bin
+z /= 100 * z_itrn # Factor of 100 for conversion from cm/s to m/s
+print(z)
+
+# Plotting
+fig = plt.figure()
+ax1 = fig.add_subplot(111)
+cs = plt.contourf(x,y,z, cmap='RdBu')
+ax2 = ax1.twinx()
+ax2.plot(rayleigh_times, rayleigh_lats, c='black', marker='.', label='latitude', linewidth=0.1)
+ax1.set_xlabel('Time')
+ax1.set_ylabel('Altitude / m')
+ax2.set_ylabel('Latitude / $^\circ$')
+plt.title('Aeolus Orbit HLOS Wind Cross-section')
+fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Wind Speed / ms-1')
+plt.savefig('test2.png',dpi=300)
+
+"""
 X1 = mie_times[860:910]
 X2 = rayleigh_times
 Y1 = mie_alts[860:910]
@@ -272,8 +335,8 @@ xi, yi = np.meshgrid(xi, yi)
 z = rayleigh_wvs
 zi = griddata((rayleigh_times, rayleigh_alts),z,(xi,yi),method='linear')
 # ~ zi[mask] = np.nan
-date_time = coda.time_to_utcstring(xi[:])
-date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])	
+date_time = coda.time_to_utcstring(mie_times[:])
+date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])
 fig = plt.figure()
 ax = fig.add_subplot(111)
 cs = plt.contourf(date_time,yi,zi, cmap='RdBu')
@@ -282,7 +345,7 @@ plt.xlabel('xi',fontsize=16)
 plt.ylabel('yi',fontsize=16)
 fig.colorbar(cs, cmap='RdBu', ax=ax, orientation='vertical')
 plt.savefig('interpolated.png',dpi=300)
-
+"""
 
 """
 # Initialise arrays
