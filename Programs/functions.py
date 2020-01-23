@@ -344,3 +344,47 @@ def load_dbl_tags(dbl):
 	AMD_Product_Confid_Data, Meas_Product_Confid_Data, Mie_Wind_Prod_Conf_Data, \
 	Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, Rayleigh_HLOS_Wind, Mie_Profile, \
 	Rayleigh_Profile
+
+def createAeolusnc(outfile, rayleigh_time, rayleigh_alt, rayleigh_lat,
+	rayleigh_lon, rayleigh_wind):
+	
+	# Generate time_units string for .nc file using datetime.datetime array to
+	# midnight on the day of the first time element
+	time_units = "seconds since " + str(IAGOS_data_time[0])[0:10] + " 00:00:00"
+	
+	# Creating netCDF file
+	root = nc.Dataset(outfile, 'w', format = "NETCDF4")
+	root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
+	root.institution = \
+	"University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
+	root.title = "Aeolus HLOS Rayleigh Wind Data"
+	root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
+	dim_time = root.createDimension("time", len(rayleigh_time))
+	var_time = root.createVariable("time", "f8", ("time",))
+	var_time.standard_name = "time"
+	var_time.long_name = "time"
+	var_time.units = time_units
+	var_lon = root.createVariable("lon", "f8", ("time",))
+	var_lon.standard_name = "longitude"
+	var_lon.long_name = "Longitude"
+	var_lon.units = "degree_east"
+	var_lat = root.createVariable("lat", "f8", ("time",))
+	var_lat.standard_name = "latitude"
+	var_lat.long_name = "Latitude"
+	var_lat.units = "degree_north"
+	var_alt = root.createVariable("alt", "f8", ("time",))
+	var_alt.standard_name = "altitude"
+	var_alt.long_name = "Altitude"
+	var_alt.units = "m"
+	var_wind = root.createVariable("HLOS_wind_speed", "f8", ("time",))
+	var_wind.standard_name = "wind_speed"
+	var_wind.long_name = "Horizontal_Line_of_Sight_Wind speed"
+	var_wind.units = "m s-1"
+	
+	var_time[:] = \
+	nc.date2num(rayleigh_time, units = var_time.units, calendar = 'standard')
+	var_lon[:], var_lat[:],	var_alt[:], var_wind[:] = rayleigh_lon, \
+	rayleigh_lat, rayleigh_alt, rayleigh_wind
+	
+	print("Created file of type: ", root.data_model)
+	root.close()

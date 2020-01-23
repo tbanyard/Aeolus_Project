@@ -233,28 +233,29 @@ rayleigh_lats = []
 rayleigh_lons = []
 rayleigh_wvs = []
 
-# ~ for j in range(len(mie_date_time)):
-	# ~ observation_type = Mie_HLOS_Wind[j][2][1]
-	# ~ validity_flag = Mie_HLOS_Wind[j][2][2]
-	# ~ if observation_type == 1: # i.e. cloudy
-		# ~ if validity_flag == 1:
-			# ~ mie_times.append(mie_date_time[j])
-			# ~ mie_alts.append(mie_altitude[j])
-			# ~ mie_lats.append(mie_latitude[j])
-			# ~ mie_lons.append(mie_longitude[j])
-			# ~ mie_wvs.append(mie_wind_velocity[j])
+for j in range(len(mie_date_time)):
+	observation_type = Mie_HLOS_Wind[j][2][1]
+	validity_flag = Mie_HLOS_Wind[j][2][2]
+	if observation_type == 1: # i.e. cloudy
+		if validity_flag == 1:
+			mie_times.append(mie_date_time[j])
+			mie_alts.append(mie_altitude[j])
+			mie_lats.append(mie_latitude[j])
+			mie_lons.append(mie_longitude[j])
+			mie_wvs.append(mie_wind_velocity[j])
 			
-# ~ for k in range(len(rayleigh_date_time)):
-	# ~ observation_type = Rayleigh_HLOS_Wind[k][2][1]
-	# ~ validity_flag = Rayleigh_HLOS_Wind[k][2][2]
-	# ~ if observation_type == 2: # i.e. clear
-		# ~ if validity_flag == 1:
-			# ~ rayleigh_times.append(rayleigh_date_time[k])
-			# ~ rayleigh_alts.append(rayleigh_altitude[k])
-			# ~ rayleigh_lats.append(rayleigh_latitude[k])
-			# ~ rayleigh_lons.append(rayleigh_longitude[k])
-			# ~ rayleigh_wvs.append(rayleigh_wind_velocity[k])
-		
+for k in range(len(rayleigh_date_time)):
+	observation_type = Rayleigh_HLOS_Wind[k][2][1]
+	validity_flag = Rayleigh_HLOS_Wind[k][2][2]
+	if observation_type == 2: # i.e. clear
+		if validity_flag == 1:
+			rayleigh_times.append(rayleigh_date_time[k])
+			rayleigh_alts.append(rayleigh_altitude[k])
+			rayleigh_lats.append(rayleigh_latitude[k])
+			rayleigh_lons.append(rayleigh_longitude[k])
+			rayleigh_wvs.append(rayleigh_wind_velocity[k])
+
+# Comment out the 10 lines below to apply validity flags and cloudy/clear filter
 mie_times = mie_date_time
 mie_alts = mie_altitude
 mie_lats = mie_latitude
@@ -352,7 +353,7 @@ ax2.set_ylabel('Latitude / $^\circ$')
 plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
 fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
 # ~ plt.legend(loc=9)
-plt.savefig('test828.png',dpi=300)
+plt.savefig('test829.png',dpi=300)
 
 """
 X1 = mie_times[860:910]
