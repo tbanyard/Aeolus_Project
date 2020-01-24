@@ -24,12 +24,12 @@ import time
 # Import from functions file
 import sys
 sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
-from functions import createAeolusnc
+from functions import createAeolusnc, load_rayleigh_data
 
 # Change current working directory to parent directory
 os.chdir('..')
 
-def eachset(SS):
+def eachmonth(MM):
 	"""
 	This function...
 	"""
@@ -37,29 +37,62 @@ def eachset(SS):
 	parent = '/home/tpb38/PhD/Bath/Aeolus/'
 	# NetCDF file save directory
 	nc_dir = 'NC/'
+
+	# Set format for month
+	if MM < 10:
+		MM = '0' + str(MM)
+	else:
+		MM = str(MM)
+		
+	# Year
+	YYYY = 2020
 	
-	directory = parent + 'DBL/'
-	directory = os.fsencode(directory)		
+	# Set up directory format
+	datetag = str(YYYY) + '/' + str(MM) + '/'
+	strdirectory = parent + 'DATA2/' + datetag
+	directory = os.fsencode(strdirectory)
+	
+	# Loop through directory
 	for file in os.listdir(directory):
+		
+		print("\n===========================================================")
+		
 		# Program Timing (Time taken to get through one file)	
 		startTime = datetime.now()
 		
 		# Setting filename for dataload
 		filename = os.fsdecode(file)
 		print(str(filename), '\n')
+
+		# Set dbl link
+		dbl = strdirectory + str(filename)
+
+		# Scan for Day of Month
+		dd = str(str(filename)[25:27])
 		
-	
-	sub = nc_dir + 'example'
-	outfile = parent + sub
-	creataeolusnc(outfile, rayleigh_time, rayleigh_alt, rayleigh_lat,
-	rayleigh_lon, rayleigh_wind)
+		# Scan for Hour of Day
+		HH = str(str(filename)[28:30])
+		
+		# Scan for Minute of Hour
+		mm = str(str(filename)[30:32])
+		
+		# Scan for Second of Minute
+		ss = str(str(filename)[32:34])
+		
+		print('YYYY-MM-dd HH:mm:ss = ', YYYY, '-', MM, '-', dd, ' ', HH, ':', mm, ':', ss, '\n')
+		
+		ncfilename = 'AE_' + str(YYYY) + '-' + str(MM) + '-' + str(dd) + '_' + str(HH) + str(mm) + str(ss) + '.nc'
+		sub = nc_dir + ncfilename
+		outfile = parent + sub
+		print(outfile)
+		createAeolusnc(dbl, outfile)
 
 if __name__ == '__main__':
 	"""Enables program to be executed using multiple processes/cores"""
 	startTime = datetime.now()
 	processes = []
-	for YYYY in range(1994,2021):
-		p = multiprocessing.Process(target=eachyear, args=(YYYY,))
+	for MM in range(1,13):
+		p = multiprocessing.Process(target=eachmonth, args=(MM,))
 		processes.append(p)
 		p.start()
 			

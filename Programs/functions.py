@@ -345,12 +345,52 @@ def load_dbl_tags(dbl):
 	Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, Rayleigh_HLOS_Wind, Mie_Profile, \
 	Rayleigh_Profile
 
-def createAeolusnc(outfile, rayleigh_time, rayleigh_alt, rayleigh_lat,
-	rayleigh_lon, rayleigh_wind):
+def load_rayleigh_data(dbl):
+	# Open DBL file
+	pf = coda.open(dbl)
+	
+	# Fetching Data
+	rayleigh_wind_velocity = coda.fetch(pf, 'rayleigh_hloswind', -1, 'windresult/rayleigh_wind_velocity')
+	rayleigh_latitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/latitude_cog')
+	rayleigh_longitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/longitude_cog')
+	rayleigh_altitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/altitude_vcog')
+	rayleigh_date_time = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/datetime_cog')
+	mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1, 'windresult/mie_wind_velocity')
+	mie_latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/latitude_cog')
+	mie_longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
+	mie_altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
+	mie_date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
+	
+	# Mie and Rayleigh Grouping
+	Mie_Grouping = coda.fetch(pf, 'mie_grouping')
+	Rayleigh_Grouping = coda.fetch(pf, 'rayleigh_grouping')
+	
+	# Validity Flags
+	Mie_Wind_Prod_Conf_Data = coda.fetch(pf, 'mie_wind_prod_conf_data')
+	Rayleigh_Wind_Prod_Conf_Data = coda.fetch(pf, 'rayleigh_wind_prod_conf_data')
+	Mie_HLOS_Wind = coda.fetch(pf, 'mie_hloswind')
+	Rayleigh_HLOS_Wind = coda.fetch(pf, 'rayleigh_hloswind')
+	
+	return rayleigh_wind_velocity, rayleigh_latitude, rayleigh_longitude, \
+	rayleigh_altitude, rayleigh_date_time, mie_wind_velocity, mie_latitude, \
+	mie_longitude, mie_altitude, mie_date_time, Mie_Grouping, Rayleigh_Grouping, \
+	Mie_Wind_Prod_Conf_Data, Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, \
+	Rayleigh_HLOS_Wind
+	
+
+def createAeolusnc(dbl, outfile):
+	
+	# Load data from DBL file
+	data = load_rayleigh_data(dbl)
+	rayleigh_time = data[4]
+	rayleigh_alt = data[3]
+	rayleigh_lat = data[1]
+	rayleigh_lon = data[2]
+	rayleigh_wind = data[0]
 	
 	# Generate time_units string for .nc file using datetime.datetime array to
 	# midnight on the day of the first time element
-	time_units = "seconds since " + str(IAGOS_data_time[0])[0:10] + " 00:00:00"
+	time_units = "seconds since " + "2000-01-01" + " 00:00:00"
 	
 	# Creating netCDF file
 	root = nc.Dataset(outfile, 'w', format = "NETCDF4")
@@ -380,11 +420,18 @@ def createAeolusnc(outfile, rayleigh_time, rayleigh_alt, rayleigh_lat,
 	var_wind.standard_name = "wind_speed"
 	var_wind.long_name = "Horizontal_Line_of_Sight_Wind speed"
 	var_wind.units = "m s-1"
+	# N.B. A variable 'var_RG' needs to be created for the plotting.
+	# It is of a different dimension though, that of len(RG_time).
+	# ~ var_RG = root.createVariable("Rayleigh_Grouping", "f8", ("RG_time",))
+	# ~ var_RG.standard_name = "rayleigh_grouping"
+	# ~ var_RG.long_name = "Rayleigh_Grouping"
+	# ~ var_RG.units = "unitless"
 	
-	var_time[:] = \
-	nc.date2num(rayleigh_time, units = var_time.units, calendar = 'standard')
-	var_lon[:], var_lat[:],	var_alt[:], var_wind[:] = rayleigh_lon, \
-	rayleigh_lat, rayleigh_alt, rayleigh_wind
+	var_time[:], var_lon[:], var_lat[:], var_alt[:], var_wind[:] = \
+	rayleigh_time, rayleigh_lon, rayleigh_lat, rayleigh_alt, rayleigh_wind
 	
 	print("Created file of type: ", root.data_model)
 	root.close()
+	
+def ncload():
+	return
