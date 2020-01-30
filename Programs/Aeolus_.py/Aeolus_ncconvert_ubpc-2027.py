@@ -25,27 +25,29 @@ import time
 
 # Import from functions file
 import sys
-sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
+# ~ sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
 # ~ sys.path.append('/home/a/tpb38/scratch/Aeolus/')
-# ~ sys.path.append('/media/GWR/AEOLUS/')
+sys.path.append('/media/GWR/AEOLUS/')
 from functions import createAeolusnc, load_rayleigh_data
 
 # Change current working directory to parent directory
-os.chdir('..')
+# ~ os.chdir('..')
 
 def eachmonth(MM):
 	"""
 	This function...
 	"""
 	# Aeolus directory
-	parent = '/home/tpb38/PhD/Bath/Aeolus/' #BALENA: '/home/a/tpb38/scratch/Aeolus/'
+	# ~ parent = '/home/tpb38/PhD/Bath/Aeolus/' #BALENA: '/home/a/tpb38/scratch/Aeolus/'
+	parent = '/media/GWR/AEOLUS/'
 	# DBL file directory
-	dbl_dir = 'DATA2/' #BALENA: 'DBL/'
+	# ~ dbl_dir = 'DATA2/' #BALENA: 'DBL/' #UBPC-2027 'DBL/'
+	dbl_dir = 'DBL/'
 	# NetCDF file save directory
 	nc_dir = 'NC/'
 
 	# Year
-	YYYY = 2019
+	YYYY = 2020
 	
 	# Set format for month
 	if MM < 10:
@@ -57,6 +59,8 @@ def eachmonth(MM):
 	datetag = str(YYYY) + '/' + str(MM) + '/'
 	strdirectory = parent + dbl_dir + datetag
 	directory = os.fsencode(strdirectory)
+	
+	# ~ time.sleep(43000)
 	
 	# Loop through directory
 	for file in os.listdir(directory):

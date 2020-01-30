@@ -276,9 +276,6 @@ print("Mie Times has length: ", len(mie_times))
 print("Rayleigh Times has length: ", len(rayleigh_times))
 print("Rayleigh Grouping has length: ", len(Rayleigh_Grouping))
 
-for t in range(len(rayleigh_times)):
-	print(rayleigh_times[t])
-
 # ~ RG_elmnt = 0
 # ~ for t in range(len(rayleigh_times)):
 	# ~ if rayleigh_times[t] < Rayleigh_Grouping[RG_elmnt][1]:

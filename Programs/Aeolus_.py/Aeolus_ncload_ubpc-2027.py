@@ -27,19 +27,21 @@ from scipy.interpolate import griddata
 
 # Import from functions file
 import sys
-sys.path.append('/home/tpb38/PhD/Bath/')
-sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
+# ~ sys.path.append('/home/tpb38/PhD/Bath/')
+# ~ sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
+sys.path.append('/media/GWR/AEOLUS/')
 from phdfunctions import timeseriesplot, find_nearest
 from functions import ncload
 
-
 # Change current working directory to parent directory
-os.chdir('..')
+# ~ os.chdir('..')
 
-# Here I need to iterate through all. nc files and plot all of them into jpgs to view one after another
+# Here I need to iterate through all. nc files and plot all of them into pngs to view one after another
 """Find directory and read netCDF data"""
-infile = '/home/tpb38/PhD/Bath/Aeolus/NC/'
-infile += 'AE_2019-07-19_221623.nc' # Specifies data file
+# ~ infile = '/home/tpb38/PhD/Bath/Aeolus/NC/'
+# ~ infile += 'AE_2019-07-19_221623.nc' # Specifies data file
+infile = '/media/GWR/AEOLUS/NC/'
+infile += 'AE_2B_2019-04-17_055717.nc'
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -103,11 +105,11 @@ x, y = np.meshgrid(date_time, alts)
 """=================================================================="""
 """===========================Plotting==============================="""
 """=================================================================="""
-os.chdir('..')
+# ~ os.chdir('..')
 os.chdir('Plots')
 
 YYYY = '2019'
-MM = '07'
+MM = '04'
 
 # Enter corresponding YYYY directory
 print('\n')
@@ -157,4 +159,4 @@ ax2.set_ylabel('Latitude / $^\circ$')
 plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
 fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
 # ~ plt.legend(loc=9)
-plt.savefig('test28.1.20.png',dpi=300)
+plt.savefig('test29.1.20.png',dpi=300)
