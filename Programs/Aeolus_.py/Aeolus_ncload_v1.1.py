@@ -41,7 +41,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them into jpgs to view one after another
 """Find directory and read netCDF data"""
 infile = '/home/tpb38/PhD/Bath/Aeolus/NC/'
-infile += 'AE_2019-07-19_221623.nc' # Specifies data file
+infile += 'AE_2B_2019-07-19_221623.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -159,4 +159,4 @@ ax2.set_ylabel('Latitude / $^\circ$')
 plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
 fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
 # ~ plt.legend(loc=9)
-plt.savefig('test28.1.20.png',dpi=300)
+plt.savefig('test3.2.20.png',dpi=300)
