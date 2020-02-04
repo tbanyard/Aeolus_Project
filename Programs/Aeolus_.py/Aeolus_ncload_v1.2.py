@@ -84,7 +84,7 @@ for file in os.listdir(directory):
 	"""=================================================================="""
 	"""=======Test to see if orbit is sufficiently within Andes box======"""
 	"""=================================================================="""
-	mnopib = 10 # minimum_number_of_profiles_in_box
+	mnopib = 150 # minimum_number_of_profiles_in_box
 	np.set_printoptions(threshold=sys.maxsize) # Print full arrays without truncation
 	# ~ print(np.where(data_lat<-80, 0, (np.where(data_lat>-40, 0, 1))))
 	# Find where the satellite is within the Andes box
@@ -93,7 +93,8 @@ for file in os.listdir(directory):
 	# Grouping the differences between the elements in diffs (2nd derivative)
 	grouped_diffs = [(k, sum(1 for i in g)) for k,g in groupby(diffs)]
 	# Returns: [(0, 6206), (1, 1), ..., (0, 1748), (-1, 1), ..., (0, 8617)]
-	
+	print(box)
+	print(grouped_diffs)
 	# Finding the start and end elements of the desired section
 	itrn = 0
 	start_elmnt = 0
@@ -102,7 +103,7 @@ for file in os.listdir(directory):
 		if u[0] != 0: # Bypass 1s and -1s
 			itrn += u[1]
 		elif u[0] == 0:
-			if data_lat[itrn] < -40 and data_lat[itrn] > -80: # Is this section the Andes box?
+			if data_lat[itrn] < -40 and data_lat[itrn] > -80 and box[itrn] == 1: # Is this section the Andes box?
 				if u[1] > mnopib: # Are there enough profiles in the box?
 					if start_elmnt == 0:
 						start_elmnt = itrn # First profile in box
@@ -112,7 +113,7 @@ for file in os.listdir(directory):
 					itrn += u[1]
 			else:
 				itrn += u[1]
-	
+	print(data_lon[722:778])
 	if end_elmnt == 0:
 		continue
 	
@@ -122,6 +123,8 @@ for file in os.listdir(directory):
 	data_alt = data_alt[start_elmnt:end_elmnt+1]
 	data_HLOS = data_HLOS[start_elmnt:end_elmnt+1]
 	rayleigh_times = rayleigh_times[start_elmnt:end_elmnt+1]
+	print(data_lat)
+	print(data_lon)
 
 	"""=================================================================="""
 	"""=====================Creating arrays for plot====================="""
@@ -142,6 +145,7 @@ for file in os.listdir(directory):
 		for t in range(len(rayleigh_times)):
 			# Find all elements inside this sandwich and add to z and z_itrn:
 			if rayleigh_times[t] < RG[RG_elmnt] and rayleigh_times[t] >= lastgroupstarttime:
+				print(rayleigh_times[t])
 				if RG_start == 0:
 					RG_start = RG_elmnt
 				val = find_nearest(alts, data_alt[t]) # Find the nearest altitude level
@@ -155,10 +159,13 @@ for file in os.listdir(directory):
 	# Find the mean for each bin
 	z /= 100 * z_itrn # Factor of 100 for conversion from cm/s to m/s
 	print(z)
+	
 
 	# Amend RG array
 	RG = RG[RG_start:RG_end+1]
 	z = z[:, RG_start:RG_end+1]
+	print(RG_start)
+	print(RG_end)
 	
 	date_time = coda.time_to_utcstring(RG[:])
 	date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])
@@ -176,7 +183,7 @@ for file in os.listdir(directory):
 	os.chdir('Plots')
 
 	YYYY = str(filename)[6:10]
-	MM = str(filename)[12:14]
+	MM = str(filename)[11:13]
 
 	# Enter corresponding YYYY directory
 	print('\n')
@@ -200,7 +207,7 @@ for file in os.listdir(directory):
 			else:
 				raise
 	os.chdir(MM)
-
+	print(infile, '\n')
 	# Plotting data
 	fig = plt.figure()
 	ax1 = fig.add_subplot(111)

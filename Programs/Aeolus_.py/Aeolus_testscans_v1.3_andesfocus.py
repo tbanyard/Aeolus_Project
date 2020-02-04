@@ -43,8 +43,14 @@ hdr = dbl # Storing hdr and dbl files in same directory for now
 # ~ dbl += 'AE_OPER_ALD_U_N_2B_20190711T220359_20190711T233347_0002.DBL'
 # ~ hdr += 'AE_OPER_ALD_U_N_2B_20190711T220359_20190711T233347_0002.HDR'
 """2019 07 19"""
-dbl += 'AE_OPER_ALD_U_N_2B_20190719T221623_20190719T234635_0002.DBL'
-hdr += 'AE_OPER_ALD_U_N_2B_20190719T221623_20190719T234635_0002.HDR'
+# ~ dbl += 'AE_OPER_ALD_U_N_2B_20190719T221623_20190719T234635_0002.DBL'
+# ~ hdr += 'AE_OPER_ALD_U_N_2B_20190719T221623_20190719T234635_0002.HDR'
+"""2019 01 02"""
+# ~ dbl += 'AE_OPER_ALD_U_N_2B_20190102T055638_20190102T072714_0001.DBL'
+# ~ hdr += 'AE_OPER_ALD_U_N_2B_20190102T055638_20190102T072714_0001.HDR'
+"""2019 01 03"""
+dbl += 'AE_OPER_ALD_U_N_2B_20190103T220302_20190103T233302_0001.DBL'
+hdr += 'AE_OPER_ALD_U_N_2B_20190103T220302_20190103T233302_0001.HDR'
 
 # Opening Files
 pf = coda.open(dbl)
@@ -350,7 +356,7 @@ ax2.set_ylabel('Latitude / $^\circ$')
 plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
 fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
 # ~ plt.legend(loc=9)
-plt.savefig('test829.png',dpi=300)
+plt.savefig('test831.png',dpi=300)
 
 """
 X1 = mie_times[860:910]

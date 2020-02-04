@@ -79,7 +79,7 @@ for file in os.listdir(directory):
 	"""=================================================================="""
 	"""=======Test to see if orbit is sufficiently within Andes box======"""
 	"""=================================================================="""
-	mnopib = 10 # minimum_number_of_profiles_in_box
+	mnopib = 30 # minimum_number_of_profiles_in_box
 	np.set_printoptions(threshold=sys.maxsize) # Print full arrays without truncation
 	# ~ print(np.where(data_lat<-80, 0, (np.where(data_lat>-40, 0, 1))))
 	# Find where the satellite is within the Andes box
@@ -98,7 +98,7 @@ for file in os.listdir(directory):
 		if u[0] != 0: # Bypass 1s and -1s
 			itrn += u[1]
 		elif u[0] == 0:
-			if data_lat[itrn] < -40 and data_lat[itrn] > -80: # Is this section the Andes box?
+			if data_lat[itrn] < -40 and data_lat[itrn] > -80 and box[itrn] == 1: # Is this section the Andes box?
 				if u[1] > mnopib: # Are there enough profiles in the box?
 					if start_elmnt == 0:
 						start_elmnt = itrn # First profile in box
@@ -168,12 +168,11 @@ for file in os.listdir(directory):
 	"""===========================Plotting==============================="""
 	"""=================================================================="""
 	os.chdir('..')
-	print(os.getcwd())
 	os.chdir('Plots')
 
 	YYYY = str(filename)[6:10]
-	MM = s
-
+	MM = str(filename)[11:13]
+	print(os.getcwd())
 	# Enter corresponding YYYY directory
 	print('\n')
 	try:
@@ -196,7 +195,7 @@ for file in os.listdir(directory):
 			else:
 				raise
 	os.chdir(MM)
-
+	print(infile, '\n')
 	# Plotting data
 	fig = plt.figure()
 	ax1 = fig.add_subplot(111)
