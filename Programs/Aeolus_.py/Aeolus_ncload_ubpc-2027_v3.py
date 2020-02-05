@@ -223,13 +223,14 @@ for file in os.listdir(directory):
 		ax1.set_ylabel('Altitude / m')
 		ax2.set_ylabel('Latitude / $^\circ$')
 		plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
-		fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
+		fig.colorbar(cs, cmap='RdBu_r', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
 		# ~ plt.legend(loc=9)
 		pngsavename = str(filename)[:-3]
 		if complete_boxes != 0:
 			pngsavename += '_orb' + str(complete_boxes+1)
 		pngsavename += '.png'
 		plt.savefig(pngsavename,dpi=300)
+		plt.close()
 		
 		# Climb out of plot directory
 		os.chdir('..')
