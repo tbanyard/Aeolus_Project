@@ -19,7 +19,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import os
-os.putenv('CODA_DEFINITION', '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+os.putenv('CODA_DEFINITION',
+'/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
 import coda
 import errno
 from datetime import datetime
@@ -65,12 +66,13 @@ if load_hdr == True:
 	Sat_Track, List_of_Valid_Mie_Profile_Counts, \
 	Valid_Mie_Profile_Count, List_of_Valid_Rayleigh_Profile_Counts, \
 	Valid_Rayleigh_Profile_Count, List_of_Invalid_Mie_Profile_Counts, \
-	Invalid_Mie_Profile_Count, List_of_Invalid_Rayleigh_Profile_Counts, \
+	Invalid_Mie_Profile_Count, List_of_Invalid_Rayleigh_Profile_Counts,\
 	Invalid_Rayleigh_Profile_Count, Num_Profiles_Surface_Mie, \
 	Num_Profiles_Surface_Ray, List_of_Valid_L2B_Mie_Wind_Counts, \
 	Valid_L2B_Mie_Wind_Count, List_of_Valid_L2B_Rayleigh_Wind_Counts, \
-	Valid_L2B_Rayleigh_Wind_Count, List_of_Invalid_L2B_Mie_Wind_Counts, \
-	Invalid_L2B_Mie_Wind_Count, List_of_Invalid_L2B_Rayleigh_Wind_Counts, \
+	Valid_L2B_Rayleigh_Wind_Count, List_of_Invalid_L2B_Mie_Wind_Counts,\
+	Invalid_L2B_Mie_Wind_Count, \
+	List_of_Invalid_L2B_Rayleigh_Wind_Counts, \
 	Invalid_L2B_Rayleigh_Wind_Count, List_of_Dsds, Dsd, Meas_Map_ADS, \
 	Mie_Grouping_ADS, Rayleigh_Grouping_Map, Mie_Geolocation_ADS, \
 	Rayleigh_Geolocation_ADS, AMD_Product_Confid_Data_ADS, \
@@ -83,45 +85,60 @@ if load_hdr == True:
 if load_dbl == True:
 	Product, Proc_Stage, Ref_Doc, Acquisition_Station, \
 	Proc_Center, Proc_Time, Software_Ver, Baseline, Sensing_Start, \
-	Sensing_Stop, Phase, Cycle, Rel_Orbit, Abs_Orbit, State_Vector_Time, \
-	Delta_UT1, X_Position, Y_Position, Z_Position, X_Velocity, Y_Velocity, \
-	Z_Velocity, Vector_Source, Utc_Sbt_Time, Sat_Binary_Time, \
-	Clock_Step, Leap_Utc, Gps_Utc_Time_Difference, Leap_Sign, \
-	Leap_Err, Product_Err, Tot_Size, Sph_Size, Num_Dsd, Dsd_Size, \
-	Num_Data_Sets, Sph_Descriptor, NumMeasurements, NumMieGroups, \
-	NumRayleighGroups, NumMieWindResults, NumRayleighWindResults, \
-	NumMieProfiles,	NumRayleighProfiles, NumAMDprofiles, Intersect_Start_Lat, \
-	Intersect_Start_Long, Intersect_Stop_Lat, Intersect_Stop_Long, \
-	Sat_Track, Valid_Mie_Profile_Count, Valid_Rayleigh_Profile_Count, \
+	Sensing_Stop, Phase, Cycle, Rel_Orbit, Abs_Orbit, \
+	State_Vector_Time, Delta_UT1, X_Position, Y_Position, Z_Position, \
+	X_Velocity, Y_Velocity, Z_Velocity, Vector_Source, Utc_Sbt_Time, \
+	Sat_Binary_Time, Clock_Step, Leap_Utc, Gps_Utc_Time_Difference, \
+	Leap_Sign, Leap_Err, Product_Err, Tot_Size, Sph_Size, Num_Dsd, \
+	Dsd_Size, Num_Data_Sets, Sph_Descriptor, NumMeasurements, \
+	NumMieGroups, NumRayleighGroups, NumMieWindResults, \
+	NumRayleighWindResults, NumMieProfiles,	NumRayleighProfiles, \
+	NumAMDprofiles, Intersect_Start_Lat, Intersect_Start_Long, \
+	Intersect_Stop_Lat, Intersect_Stop_Long, Sat_Track, \
+	Valid_Mie_Profile_Count, Valid_Rayleigh_Profile_Count, \
 	Invalid_Mie_Profile_Count, Invalid_Rayleigh_Profile_Count, \
 	Num_Profiles_Surface_Mie, Num_Profiles_Surface_Ray, \
 	Valid_L2B_Mie_Wind_Count, Valid_L2B_Rayleigh_Wind_Count, \
 	Invalid_L2B_Mie_Wind_Count, Invalid_L2B_Rayleigh_Wind_Count, \
-	Dsd, Meas_Map, Mie_Map_of_L1B_Meas_Used, Rayleigh_Map_of_L1B_Meas_Used, \
-	Mie_Grouping, Rayleigh_Grouping, Mie_Geolocation, Rayleigh_Geolocation, \
-	AMD_Product_Confid_Data, Meas_Product_Confid_Data, Mie_Wind_Prod_Conf_Data, \
-	Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, Rayleigh_HLOS_Wind, Mie_Profile, \
-	Rayleigh_Profile = load_dbl_tags(dbl)
+	Dsd, Meas_Map, Mie_Map_of_L1B_Meas_Used, \
+	Rayleigh_Map_of_L1B_Meas_Used, Mie_Grouping, Rayleigh_Grouping, \
+	Mie_Geolocation, Rayleigh_Geolocation, AMD_Product_Confid_Data, \
+	Meas_Product_Confid_Data, Mie_Wind_Prod_Conf_Data, \
+	Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, Rayleigh_HLOS_Wind, \
+	Mie_Profile, Rayleigh_Profile = load_dbl_tags(dbl)
 
 # Fetching Data
-rayleigh_wind_velocity = coda.fetch(pf, 'rayleigh_hloswind', -1, 'windresult/rayleigh_wind_velocity')
-mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1, 'windresult/mie_wind_velocity')
-latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/latitude_cog')
-longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
-altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
-date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
+rayleigh_wind_velocity = coda.fetch(pf, 'rayleigh_hloswind', -1,
+	'windresult/rayleigh_wind_velocity')
+mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1,
+	'windresult/mie_wind_velocity')
+latitude = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/latitude_cog')
+longitude = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/longitude_cog')
+altitude = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/altitude_vcog')
+date_time = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/datetime_cog')
 
 # Validity Flags
-Mie_Wind_Prod_Conf_Data = coda.fetch(pf, 'mie_wind_prod_conf_data')
-Rayleigh_Wind_Prod_Conf_Data = coda.fetch(pf, 'rayleigh_wind_prod_conf_data')
-Mie_HLOS_Wind = coda.fetch(pf, 'mie_hloswind')
-Rayleigh_HLOS_Wind = coda.fetch(pf, 'rayleigh_hloswind')
+Mie_Wind_Prod_Conf_Data = coda.fetch(pf,
+	'mie_wind_prod_conf_data')
+Rayleigh_Wind_Prod_Conf_Data = coda.fetch(pf,
+	'rayleigh_wind_prod_conf_data')
+Mie_HLOS_Wind = coda.fetch(pf,
+	'mie_hloswind')
+Rayleigh_HLOS_Wind = coda.fetch(pf,
+	'rayleigh_hloswind')
 
 # Retrieving Field Names
 field_names = coda.get_field_names(pf)
-mie_hloswind_field_names = coda.get_field_names(pf, 'mie_hloswind', 0)
-mie_geolocation_field_names = coda.get_field_names(pf, 'mie_geolocation', 0)
-windresult_geolocation_field_names = coda.get_field_names(pf, 'mie_geolocation', 0, 'windresult_geolocation')
+mie_hloswind_field_names = coda.get_field_names(pf,
+	'mie_hloswind', 0)
+mie_geolocation_field_names = coda.get_field_names(pf,
+	'mie_geolocation', 0)
+windresult_geolocation_field_names = coda.get_field_names(pf,
+	'mie_geolocation', 0, 'windresult_geolocation')
 # ~ print(field_names)
 # ~ print(mie_hloswind_field_names)
 # ~ print(mie_geolocation_field_names)
@@ -231,8 +248,14 @@ Y4 = mie_wind_velocity[11500:21500]
 Y5 = rayleigh_wind_velocity[11500:21500]
 variable = 'Altitude'
 variable2 = 'Latitude'
-timeseriesplot(X, Y1, Y2, plottitle = 'Variation in Aeolus\' longitude with latitude during a two minute period', date_form = '%H:%M:%S', minor_date_form = '%M:%S', data_type = 'coda', size = 0.5, color = 'black', marker = '+', variable = variable, variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
-plt.savefig("timeseries.png", dpi=300)
+timeseriesplot(X, Y1, Y2,
+	plottitle = \
+	'Variation in Aeolus\' altitude with latitude during a two minute period',
+	date_form = '%H:%M:%S', minor_date_form = '%M:%S',
+	data_type = 'coda',	size = 0.5, color = 'black', marker = '+',
+	variable = variable, variable2 = variable2, legend = 0,
+	l_adj = 0.15, r_adj=0.85)
+plt.savefig("timeseries3.png", dpi=300)
 # ~ print(coda.time_to_string(date_time[21000]))
 
 # Initialise arrays
@@ -250,7 +273,8 @@ for t in range(len(X)):
 		mwvs.append(Y4[t])
 
 date_time = coda.time_to_utcstring(X[:])
-date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])
+date_time = np.array([datetime.strptime(date,
+	'%Y-%m-%d %H:%M:%S.%f')	for date in date_time])
 X = date_time
 
 xx,yy = np.meshgrid(X, Y1)
@@ -267,7 +291,8 @@ X=X/100000
 print(X)
 
 # ~ date_time = coda.time_to_utcstring(X[:])
-# ~ date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])
+# ~ date_time = np.array([datetime.strptime(date,
+	'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
 # ~ X = date_time
 
 # ~ xi = np.linspace(28.5, 26.5, 1000)

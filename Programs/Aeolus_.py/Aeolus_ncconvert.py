@@ -8,7 +8,12 @@ Aeolus data conversion to netCDF format
 ------------------------------------------------------------------------
 ========================================================================
 Reads .DBL files downloaded from the Aeolus database and produces netCDF
-files of key parameters from the datasets
+files of key parameters from the datasets.
+
+This program is run as multiple processes, with each being a month long.
+The year is set manually within the function eachmonth, and the default
+is 2020.
+The months are set manually in __main__, and the default is January.
 ========================================================================
 """
 
@@ -16,8 +21,10 @@ files of key parameters from the datasets
 import netCDF4 as nc
 import numpy as np
 import os
-# ~ os.putenv('CODA_DEFINITION', '/home/a/tpb38/scratch/conda-env/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
-os.putenv('CODA_DEFINITION', '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+# ~ os.putenv('CODA_DEFINITION', '/home/a/tpb38/scratch/conda-env/
+#virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+os.putenv('CODA_DEFINITION',
+'/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
 import errno
 import multiprocessing
 from datetime import timedelta, datetime
@@ -38,14 +45,15 @@ def eachmonth(MM):
 	This function...
 	"""
 	# Aeolus directory
-	parent = '/home/tpb38/PhD/Bath/Aeolus/' #BALENA: '/home/a/tpb38/scratch/Aeolus/'
+	parent = '/home/tpb38/PhD/Bath/Aeolus/'
+	#BALENA: '/home/a/tpb38/scratch/Aeolus/'
 	# DBL file directory
 	dbl_dir = 'DATA2/' #BALENA: 'DBL/'
 	# NetCDF file save directory
 	nc_dir = 'NC/'
 
 	# Year
-	YYYY = 2019
+	YYYY = 2020
 	
 	# Set format for month
 	if MM < 10:
@@ -85,12 +93,14 @@ def eachmonth(MM):
 		# Scan for Second of Minute
 		ss = str(str(filename)[32:34])
 		
-		print('YYYY-MM-dd HH:mm:ss = ', YYYY, '-', MM, '-', dd, ' ', HH, ':', mm, ':', ss, '\n')
+		print('YYYY-MM-dd HH:mm:ss = ', YYYY, '-', MM, '-', dd, ' ', HH,
+			':', mm, ':', ss, '\n')
 		
 		# Scan 2B or 2C
 		VV = str(str(filename)[16:18])
 		
-		ncfilename = 'AE_' + str(VV) + '_' + str(YYYY) + '-' + str(MM) + '-' + str(dd) + '_' + str(HH) + str(mm) + str(ss) + '.nc'
+		ncfilename = 'AE_' + str(VV) + '_' + str(YYYY) + '-' + str(MM) \
+		+ '-' + str(dd) + '_' + str(HH) + str(mm) + str(ss) + '.nc'
 		sub = nc_dir + ncfilename
 		outfile = parent + sub
 		print(outfile)

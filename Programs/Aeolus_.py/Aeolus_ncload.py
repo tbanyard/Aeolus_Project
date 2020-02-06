@@ -18,7 +18,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import os
-os.putenv('CODA_DEFINITION', '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+os.putenv('CODA_DEFINITION',
+'/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
 import coda
 import errno
 from datetime import timedelta, datetime
@@ -36,7 +37,8 @@ from functions import ncload
 # Change current working directory to parent directory
 os.chdir('..')
 
-# Here I need to iterate through all. nc files and plot all of them into jpgs to view one after another
+# Here I need to iterate through all. nc files and plot all of them 
+# into jpgs to view one after another
 """Find directory and read netCDF data"""
 infile = '/home/tpb38/PhD/Bath/Aeolus/NC/'
 infile += 'AE_2019-07-19_221623.nc' # Specifies data file
@@ -79,11 +81,14 @@ print(np.shape(z))
 lastgroupstarttime = 0
 for RG_elmnt in range(len(RG)):
 	for t in range(len(rayleigh_times)):
-		# Find all elements inside this sandwich and add to z and z_itrn:
-		if rayleigh_times[t] < RG[RG_elmnt] and rayleigh_times[t] >= lastgroupstarttime:
-			val = find_nearest(alts, data_alt[t]) # Find the nearest altitude level
+		# Find all elements inside this sandwich and add to z & z_itrn:
+		if rayleigh_times[t] < RG[RG_elmnt] and \
+		rayleigh_times[t] >= lastgroupstarttime:
+			# Find the nearest altitude level
+			val = find_nearest(alts, data_alt[t])
 			alt_elmnt = np.where(alts == val)[0][0]
-			if np.abs(data_HLOS[t]) < 25000: # Cap wind speeds to 250 m/s
+			# Cap wind speeds to 250 m/s
+			if np.abs(data_HLOS[t]) < 25000:
 				z[alt_elmnt][RG_elmnt] += data_HLOS[t]
 				z_itrn[alt_elmnt][RG_elmnt] += 1
 	lastgroupstarttime = RG[RG_elmnt]
@@ -93,9 +98,11 @@ z /= 100 * z_itrn # Factor of 100 for conversion from cm/s to m/s
 print(z)
 
 date_time = coda.time_to_utcstring(RG[:])
-date_time = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in date_time])
+date_time = np.array([datetime.strptime(date,
+	'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
 rayleigh_times = coda.time_to_utcstring(rayleigh_times[:])
-rayleigh_times = np.array([datetime.strptime(date, '%Y-%m-%d %H:%M:%S.%f') for date in rayleigh_times])
+rayleigh_times = np.array([datetime.strptime(date,
+	'%Y-%m-%d %H:%M:%S.%f') for date in rayleigh_times])
 x, y = np.meshgrid(date_time, alts)
 # ~ print(x)
 # ~ print(y)
@@ -137,7 +144,8 @@ fig = plt.figure()
 ax1 = fig.add_subplot(111)
 cs = plt.contourf(x,y,z, cmap='RdBu', levels=np.linspace(-200, 200, 41))
 ax2 = ax1.twinx()
-ax2.plot(rayleigh_times, data_lat, c='black', marker='.', markersize='1', label='Latitude', linewidth=0.1)
+ax2.plot(rayleigh_times, data_lat, c='black', marker='.',
+	markersize='1', label='Latitude', linewidth=0.1)
 
 # Setting Date axis
 date_form = '%H:%M'
@@ -155,6 +163,7 @@ ax1.set_xlabel('Time')
 ax1.set_ylabel('Altitude / m')
 ax2.set_ylabel('Latitude / $^\circ$')
 plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
-fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal', label='HLOS Rayleigh Wind Speed / ms-1')
+fig.colorbar(cs, cmap='RdBu', ax=ax1, orientation='horizontal',
+	label='HLOS Rayleigh Wind Speed / ms-1')
 # ~ plt.legend(loc=9)
 plt.savefig('test28.1.20.png',dpi=300)

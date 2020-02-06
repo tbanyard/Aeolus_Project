@@ -18,7 +18,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import os
-os.putenv('CODA_DEFINITION', '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+os.putenv('CODA_DEFINITION',
+'/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
 import coda
 import errno
 from datetime import datetime
@@ -44,17 +45,25 @@ load_hdr = False
 load_dbl = True
 
 # Fetching Data
-mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1, 'windresult/mie_wind_velocity')
-latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/latitude_cog')
-longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
-altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
-date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
+mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1,
+	'windresult/mie_wind_velocity')
+latitude = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/latitude_cog')
+longitude = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/longitude_cog')
+altitude = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/altitude_vcog')
+date_time = coda.fetch(pf, 'mie_geolocation', -1,
+	'windresult_geolocation/datetime_cog')
 
 # Retrieving Field Names
 field_names = coda.get_field_names(pf)
-mie_hloswind_field_names = coda.get_field_names(pf, 'mie_hloswind', 0)
-mie_geolocation_field_names = coda.get_field_names(pf, 'mie_geolocation', 0)
-windresult_geolocation_field_names = coda.get_field_names(pf, 'mie_geolocation', 0, 'windresult_geolocation')
+mie_hloswind_field_names = coda.get_field_names(pf,
+	'mie_hloswind', 0)
+mie_geolocation_field_names = coda.get_field_names(pf,
+	'mie_geolocation', 0)
+windresult_geolocation_field_names = coda.get_field_names(pf,
+	'mie_geolocation', 0, 'windresult_geolocation')
 print(field_names)
 print(mie_hloswind_field_names)
 print(mie_geolocation_field_names)
@@ -69,6 +78,7 @@ os.chdir('..')
 os.chdir('..')
 os.chdir('Plots')
 
+# Creating plot
 X = date_time[11500:12500]	#[11500:21500] [11500:12500]
 Y = altitude[11500:12500]
 Y2 = latitude[11500:12500]
@@ -76,9 +86,17 @@ Y3 = longitude[11500:12500]
 Y4 = mie_wind_velocity[11500:12500]
 variable = 'Altitude'
 variable2 = 'Latitude'
-timeseriesplot(X, Y3, Y2, plottitle = 'Variation in Aeolus\' longitude with latitude during a two minute period', date_form = '%H:%M', minor_date_form = '%M:%S', data_type = 'coda', size = 0.5, color = 'black', marker = '+', variable = variable, variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
-plt.savefig("timeseries.png", dpi=300)
+timeseriesplot(X, Y3, Y2,
+	plottitle = \
+	'Variation in Aeolus\' longitude with latitude during a two minute period',
+	date_form = '%H:%M', minor_date_form = '%M:%S', data_type = 'coda',
+	size = 0.5, color = 'black', marker = '+', variable = variable,
+	variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
+# Saving plot
+plt.savefig("timeseries2.png", dpi=300)
 # ~ print(coda.time_to_string(date_time[21000]))
+
+"""Creating a plot at a specific level(s)"""
 
 # Initialise arrays
 alts = []
@@ -121,17 +139,18 @@ yi = np.linspace(342, 330, 1000)
 zi = griddata((x, y), z, (xi[None,:], yi[:,None]), method='cubic')
 zi2 = griddata((x2, y2), z2, (xi[None,:], yi[:,None]), method='cubic')
 
+# Creating plot
 fig = plt.figure()
 ax = fig.add_subplot(111)
 # ~ cs = ax.contour(yi, xi, zi, 5, linewidths = 0.1, colors = 'k')
 # ~ cs = ax.contourf(yi, xi, zi, 5, cmap='jet')
 # ~ ax.contourf(x, y, z, cmap='RdBu', shading='interp')
 # ~ plt.savefig("test23.png", dpi=300)
-
 ax.scatter(y, x, s=5, c='blue', marker='.')
 ax.scatter(y2, x2, s=5, c='red', marker='.')
 ax.set_xlim(340, 341)
 ax.set_ylim(20, 26)
+# Saving plot
 plt.savefig("latlon2.png", dpi=300)
 
 
