@@ -7,7 +7,7 @@ Aeolus data load from netCDF format
 ---v1.1---Looping through dataset and plotting all orbits that travel---
 ----------through the 40-80 box.----------------------------------------
 ---v1.2---3.2.20-Updates------------------------------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 
