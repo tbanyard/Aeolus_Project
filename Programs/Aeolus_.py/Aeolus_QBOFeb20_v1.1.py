@@ -88,7 +88,7 @@ for file in sorted(os.listdir(directory)):
 	# Print full arrays without truncation
 	np.set_printoptions(threshold=sys.maxsize)
 	# Find where the satellite is within the equatorial band
-	lat_band = np.where(data_lat<-15, 0, (np.where(data_lat>15, 0, 1)))
+	lat_band = np.where(data_lat<-5, 0, (np.where(data_lat>5, 0, 1)))
 	# Initialise orbit array
 	y = np.zeros(len(alts))
 	y_itrn = np.zeros(len(alts))
@@ -120,7 +120,7 @@ for file in sorted(os.listdir(directory)):
 					node = -1 # Descending node
 				
 				# Add data to orbit array
-				if node == 1:
+				if node == 1 or node == -1:
 					y[alt_elmnt] += data_HLOS[t] * node
 				y_itrn[alt_elmnt] += 1
 	
