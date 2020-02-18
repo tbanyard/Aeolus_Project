@@ -87,6 +87,6 @@ plottitle = 'Variation in Aeolus\' longitude with latitude from 30N-30S',
 	size = 0.5, color = 'black', marker = '+', variable = variable,
 	variable2 = variable2, legend = 0, l_adj = 0.15, r_adj=0.85)
 # Saving plot
-plt.savefig("timeseries.png", dpi=300)
+plt.savefig("timeseriesaba.png", dpi=300)
 print(coda.time_to_string(date_time[21000]))
 

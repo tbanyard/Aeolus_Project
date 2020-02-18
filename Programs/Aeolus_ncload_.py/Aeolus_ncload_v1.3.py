@@ -29,13 +29,14 @@ import errno
 from datetime import timedelta, datetime
 import time
 from scipy.interpolate import griddata
+from scipy.io import savemat
 from itertools import groupby
 
 # Import from functions file
 import sys
 sys.path.append('/home/tpb38/PhD/Bath/')
 sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
-from phdfunctions import timeseriesplot, find_nearest
+from phdfunctions import *
 from functions import ncload
 
 
@@ -45,7 +46,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC2/'
 
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -99,8 +100,8 @@ for file in os.listdir(directory):
 	# (2nd derivative)
 	grouped_diffs = [(k, sum(1 for i in g)) for k,g in groupby(diffs)]
 	# Returns:[(0, 6206),(1, 1),...,(0, 1748),(-1, 1),...,(0, 8617)]
-	print(box)
-	print(grouped_diffs)
+	# ~ print(box)
+	# ~ print(grouped_diffs)
 	# Finding the start and end elements of the desired section
 	itrn = 0
 	start_elmnt = 0
@@ -108,7 +109,7 @@ for file in os.listdir(directory):
 	complete_boxes = 0
 	# Iterate through grouped_diffs, adding up continually
 	for u in grouped_diffs:
-		if u[0] != 0: # Bypass 1s and -1s
+		if u[0] != 0: # Bypass 1's and -1's
 			itrn += u[1]
 		elif u[0] == 0:
 			# Is this section the Andes box?
@@ -175,7 +176,7 @@ for file in os.listdir(directory):
 			
 		# Find the mean for each bin
 		z /= 100 * z_itrn # Factor of 100 for conversion from cm/s - m/s
-		print(z)
+		# ~ print(z)
 		
 
 		# Amend RG array
@@ -199,6 +200,12 @@ for file in os.listdir(directory):
 		os.chdir('..')
 		print(os.getcwd())
 		os.chdir('Plots')
+		savemat("data.mat", {'data':z})
+		np.save("data.npy", [x, y, z], allow_pickle=True)
+		np.save("date_time.npy", date_time, allow_pickle=True)
+		
+		plt.plot(data_lon - 360, data_lat)
+		plt.savefig('latlon.png')
 
 		YYYY = str(filename)[6:10]
 		MM = str(filename)[11:13]
@@ -234,18 +241,9 @@ for file in os.listdir(directory):
 		ax2 = ax1.twinx()
 		ax2.plot(rayleigh_times_new, data_lat_new, c='black',
 			marker='.', markersize='1', label='Latitude', linewidth=0.1)
-
-		# Setting Date axis
-		date_form = '%H:%M'
-		minor_date_form = '%M'
-		hours = dates.HourLocator()
-		minutes = dates.MinuteLocator()
-		date_form = dates.DateFormatter(date_form)
-		minor_date_form = dates.DateFormatter(minor_date_form)
-		ax1.xaxis.set_major_formatter(date_form)
-		ax1.xaxis.set_minor_formatter(minor_date_form)
-		ax1.set_xlim(date_time[0], date_time[-1])
-		ax1.set_xlabel('Time')
+		
+		# Fix date axis
+		fixmydateaxis(ax1, date_time)
 
 		# Setting y axes
 		ax1.set_ylabel('Altitude / m')
@@ -258,11 +256,12 @@ for file in os.listdir(directory):
 		if complete_boxes != 0:
 			pngsavename += '_orb' + str(complete_boxes+1)
 		pngsavename += '.png'
-		plt.savefig(pngsavename,dpi=300)
+		# ~ plt.savefig(pngsavename,dpi=300)
 		
 		# Climb out of plot directory
 		os.chdir('..')
 		os.chdir('..')
+		plt.savefig('testme.png',dpi=300)
 		
 		# Time taken for the file
 		fduration = datetime.now() - fstartTime
