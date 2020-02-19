@@ -71,7 +71,7 @@ elif pc_or_im == 'im':
 	fixnanswithmean(z) # Uses my own function 'fixnanswithmean'
 	cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
 		x_lims[1], y_lims[0], y_lims[1]], vmin=-200, vmax=200,
-		interpolation='sinc')
+		interpolation='spline36')
 	ax1.xaxis_date()
 	date_form = dates.DateFormatter('%H:%M')
 	ax1.xaxis.set_major_formatter(date_form)
@@ -89,6 +89,8 @@ plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
 fig.colorbar(cs, cmap='RdBu_r', ax=ax1, orientation='horizontal',
 	label='HLOS Rayleigh Wind Speed / ms-1')
 ax1.set_yticks(np.arange(len(y)))
+
+# ~ ax2 = fig.add_subplot(122, figsize=(15,15))
 
 # Save figure
 os.chdir('/home/tpb38/PhD/Bath/Aeolus_Project/Plots/dump')

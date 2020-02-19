@@ -9,6 +9,7 @@ Aeolus data load from netCDF format
 ---v1.2---3.2.20-Updates------------------------------------------------
 ---v1.3---Deals with multiple orbits------------------------------------
 ----------simple_contourf-----------------------------------------------
+---v1.4---pcolormesh/imshow---------------------------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -30,18 +31,26 @@ import errno
 from datetime import timedelta, datetime
 import time
 from scipy.interpolate import griddata
+from scipy.io import savemat
 from itertools import groupby
 
 # Import from functions file
 import sys
-sys.path.append('/media/GWR/AEOLUS/')
-from phdfunctions import timeseriesplot, find_nearest
+sys.path.append('/home/tpb38/PhD/Bath/')
+sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
+from phdfunctions import *
 from functions import ncload
+
+# Change current working directory to parent directory
+os.chdir('..')
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/media/GWR/AEOLUS/NC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC2/'
+
+# Choose pcolor or imshow
+pc_or_im = 'im'
 
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -104,7 +113,7 @@ for file in os.listdir(directory):
 	complete_boxes = 0
 	# Iterate through grouped_diffs, adding up continually
 	for u in grouped_diffs:
-		if u[0] != 0: # Bypass 1s and -1s
+		if u[0] != 0: # Bypass 1's and -1's
 			itrn += u[1]
 		elif u[0] == 0:
 			# Is this section the Andes box?
@@ -139,10 +148,10 @@ for file in os.listdir(directory):
 
 		# Initialise meshgrids for x, y and z
 		alts = np.linspace(0,20000, 21)
-		# Lists
+		# ~ #Lists
 		# ~ z = [[0 for _ in range(len(RG))] for _ in range(len(alts))]
 		# ~ z_itrn = \
-		# [[0 for _ in range(len(RG))] for _ in range(len(alts))]
+		# ~ [[0 for _ in range(len(RG))] for _ in range(len(alts))]
 		z = np.zeros((len(alts),len(RG))) # NumPy Arrays
 		z_itrn = np.zeros((len(alts),len(RG)))
 		# ~ print(np.shape(z))
@@ -171,7 +180,7 @@ for file in os.listdir(directory):
 			
 		# Find the mean for each bin
 		z /= 100 * z_itrn # Factor of 100 for conversion from cm/s - m/s
-		print(z)
+		# ~ print(z)
 		
 
 		# Amend RG array
@@ -195,72 +204,73 @@ for file in os.listdir(directory):
 		os.chdir('..')
 		print(os.getcwd())
 		os.chdir('Plots')
+		savemat("data.mat", {'data':z})
+		np.save("data.npy", [x, y, z], allow_pickle=True)
+		np.save("rayleigh_times.npy", rayleigh_times_new, allow_pickle=True)
+		np.save("date_time.npy", date_time, allow_pickle=True)
+		np.save("data_track.npy", [data_lat_new, data_lon_new], allow_pickle=True)
+		
+		plt.plot(data_lon - 360, data_lat)
+		plt.savefig('latlon.png')
 
 		YYYY = str(filename)[6:10]
 		MM = str(filename)[11:13]
 
 		# Enter corresponding YYYY directory
-		print('\n')
-		try:
-			os.mkdir(YYYY)
-			print("Directory ", YYYY, " created")
-		except OSError as e:
-				if e.errno == errno.EEXIST:
-					print("Directory ", YYYY, " already exists")
-				else:
-					raise
-		os.chdir(YYYY)
-
+		enterdirectory(YYYY)
+		
 		# Enter corresponding MM directory
-		try:
-			os.mkdir(MM)
-			print("Directory ", MM, " created")
-		except OSError as e:
-				if e.errno == errno.EEXIST:
-					print("Directory ", MM, " already exists")
-				else:
-					raise
-		os.chdir(MM)
+		enterdirectory(MM)
+
 		print(infile, '\n')
 		# Plotting data
 		fig = plt.figure()
 		ax1 = fig.add_subplot(111)
-		cs = plt.contourf(x,y,z, cmap='RdBu',
-			levels=np.linspace(-200, 200, 41))
+		
+		if pc_or_im == 'pc':
+			cs = plt.pcolormesh(x, y/1000, z, cmap='RdBu_r', vmin=-200, vmax=200)
+			fixmydateaxis(ax1, date_time) # Uses my own function 'fixmydateaxis'
+		
+		elif pc_or_im == 'im':
+			# Plot imshow plot
+			x_lims = [np.ndarray.flatten(x)[0], np.ndarray.flatten(x)[-1]]
+			x_lims = dates.date2num(x_lims)
+			y_lims = [20.5, -0.5]
+			fixnanswithmean(z) # Uses my own function 'fixnanswithmean'
+			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
+				x_lims[1], y_lims[0], y_lims[1]], vmin=-200, vmax=200,
+				interpolation='spline36')
+			ax1.xaxis_date()
+			date_form = dates.DateFormatter('%H:%M')
+			ax1.xaxis.set_major_formatter(date_form)
+			plt.gca().invert_yaxis()
+
+		# Fix labels and title
+		ax1.set_xlabel('Time')
+		ax1.set_ylabel('Altitude / km')
+		plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
+
+		"""# AX2
 		ax2 = ax1.twinx()
 		ax2.plot(rayleigh_times_new, data_lat_new, c='black',
 			marker='.', markersize='1', label='Latitude', linewidth=0.1)
-
-		# Setting Date axis
-		date_form = '%H:%M'
-		minor_date_form = '%M'
-		hours = dates.HourLocator()
-		minutes = dates.MinuteLocator()
-		date_form = dates.DateFormatter(date_form)
-		minor_date_form = dates.DateFormatter(minor_date_form)
-		ax1.xaxis.set_major_formatter(date_form)
-		ax1.xaxis.set_minor_formatter(minor_date_form)
-		ax1.set_xlim(date_time[0], date_time[-1])
-		ax1.set_xlabel('Time')
-
-		# Setting y axes
-		ax1.set_ylabel('Altitude / m')
-		ax2.set_ylabel('Latitude / $^\circ$')
-		plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
-		fig.colorbar(cs, cmap='RdBu_r', ax=ax1,
-			orientation='horizontal',
+		ax2.set_ylabel('Latitude / $^\circ$')"""
+		
+		# Fix colorbar and axes
+		fig.colorbar(cs, cmap='RdBu_r', ax=ax1, orientation='horizontal',
 			label='HLOS Rayleigh Wind Speed / ms-1')
+		ax1.set_yticks(np.arange(len(y)))
 		# ~ plt.legend(loc=9)
 		pngsavename = str(filename)[:-3]
 		if complete_boxes != 0:
 			pngsavename += '_orb' + str(complete_boxes+1)
 		pngsavename += '.png'
-		plt.savefig(pngsavename,dpi=300)
-		plt.close()
+		# ~ plt.savefig(pngsavename,dpi=300)
 		
 		# Climb out of plot directory
 		os.chdir('..')
 		os.chdir('..')
+		plt.savefig('testme.png',dpi=300)
 		
 		# Time taken for the file
 		fduration = datetime.now() - fstartTime

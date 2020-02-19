@@ -9,6 +9,8 @@ Aeolus data load from netCDF format
 ---v1.2---3.2.20-Updates------------------------------------------------
 ---v1.3---Deals with multiple orbits------------------------------------
 ----------simple_contourf-----------------------------------------------
+---v1.4---pcolormesh/imshow---------------------------------------------
+---v1.5---Additional subplot with lat/lon grid showing satellite track--
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -22,6 +24,8 @@ import netCDF4 as nc
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as dates
+import matplotlib.gridspec as gridspec
+import matplotlib.text as text
 import os
 os.putenv('CODA_DEFINITION',
 '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
@@ -30,18 +34,26 @@ import errno
 from datetime import timedelta, datetime
 import time
 from scipy.interpolate import griddata
+from scipy.io import savemat
 from itertools import groupby
+from mpl_toolkits.basemap import Basemap
 
 # Import from functions file
 import sys
-sys.path.append('/media/GWR/AEOLUS/')
-from phdfunctions import timeseriesplot, find_nearest
+sys.path.append('/media/NS/AEOLUS/')
+from phdfunctions import *
 from functions import ncload
+
+# Change current working directory to parent directory
+os.chdir('..')
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/media/GWR/AEOLUS/NC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC2/'
+
+# Choose pcolor or imshow
+pc_or_im = 'im'
 
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -104,7 +116,7 @@ for file in os.listdir(directory):
 	complete_boxes = 0
 	# Iterate through grouped_diffs, adding up continually
 	for u in grouped_diffs:
-		if u[0] != 0: # Bypass 1s and -1s
+		if u[0] != 0: # Bypass 1's and -1's
 			itrn += u[1]
 		elif u[0] == 0:
 			# Is this section the Andes box?
@@ -139,10 +151,10 @@ for file in os.listdir(directory):
 
 		# Initialise meshgrids for x, y and z
 		alts = np.linspace(0,20000, 21)
-		# Lists
+		# ~ #Lists
 		# ~ z = [[0 for _ in range(len(RG))] for _ in range(len(alts))]
 		# ~ z_itrn = \
-		# [[0 for _ in range(len(RG))] for _ in range(len(alts))]
+		# ~ [[0 for _ in range(len(RG))] for _ in range(len(alts))]
 		z = np.zeros((len(alts),len(RG))) # NumPy Arrays
 		z_itrn = np.zeros((len(alts),len(RG)))
 		# ~ print(np.shape(z))
@@ -171,7 +183,7 @@ for file in os.listdir(directory):
 			
 		# Find the mean for each bin
 		z /= 100 * z_itrn # Factor of 100 for conversion from cm/s - m/s
-		print(z)
+		# ~ print(z)
 		
 
 		# Amend RG array
@@ -195,72 +207,142 @@ for file in os.listdir(directory):
 		os.chdir('..')
 		print(os.getcwd())
 		os.chdir('Plots')
-
+		# Save data (toggle on and off)
+		# ~ savemat("data.mat", {'data':z})
+		# ~ np.save("data.npy", [x, y, z], allow_pickle=True)
+		# ~ np.save("rayleigh_times.npy", rayleigh_times_new, allow_pickle=True)
+		# ~ np.save("date_time.npy", date_time, allow_pickle=True)
+		# ~ np.save("data_track.npy", [data_lat_new, data_lon_new], allow_pickle=True)
+		
 		YYYY = str(filename)[6:10]
 		MM = str(filename)[11:13]
 
 		# Enter corresponding YYYY directory
-		print('\n')
-		try:
-			os.mkdir(YYYY)
-			print("Directory ", YYYY, " created")
-		except OSError as e:
-				if e.errno == errno.EEXIST:
-					print("Directory ", YYYY, " already exists")
-				else:
-					raise
-		os.chdir(YYYY)
-
+		enterdirectory(YYYY)
+		
 		# Enter corresponding MM directory
-		try:
-			os.mkdir(MM)
-			print("Directory ", MM, " created")
-		except OSError as e:
-				if e.errno == errno.EEXIST:
-					print("Directory ", MM, " already exists")
-				else:
-					raise
-		os.chdir(MM)
+		enterdirectory(MM)
+
 		print(infile, '\n')
 		# Plotting data
+		# Initialise figure
 		fig = plt.figure()
-		ax1 = fig.add_subplot(111)
-		cs = plt.contourf(x,y,z, cmap='RdBu',
-			levels=np.linspace(-200, 200, 41))
-		ax2 = ax1.twinx()
-		ax2.plot(rayleigh_times_new, data_lat_new, c='black',
-			marker='.', markersize='1', label='Latitude', linewidth=0.1)
+		gridspec.GridSpec(5,5) # Initialise gridspec
+		
+		# Main plot
+		ax1 = plt.subplot2grid((5,5), (0,0), colspan=3, rowspan=4)
+		
+		# Choose pc or im
+		if pc_or_im == 'pc':
+			cs = plt.pcolormesh(x, y/1000, z, cmap='RdBu_r', vmin=-200, vmax=200)
+			fixmydateaxis(ax1, date_time) # Uses my own function 'fixmydateaxis'
+		
+		elif pc_or_im == 'im':
+			# Plot imshow plot
+			# Flatten x_meshgrid and convert from datetime format to mpl_compatible nums
+			x_lims = [np.ndarray.flatten(x)[0], np.ndarray.flatten(x)[-1]]
+			x_lims = dates.date2num(x_lims)
+			# Y limits
+			y_lims = [20.5, -0.5]
+			fixnanswithmean(z) # Uses my own function 'fixnanswithmean'
+			# Plots using imshow
+			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
+				x_lims[1], y_lims[0], y_lims[1]], vmin=-200, vmax=200,
+				interpolation='spline36')
+			ax1.xaxis_date() # Initialises date axis
+			date_form = dates.DateFormatter('%H:%M') # Sets date format
+			ax1.xaxis.set_major_formatter(date_form)
+			plt.gca().invert_yaxis() # Invert axis for imshow
 
-		# Setting Date axis
-		date_form = '%H:%M'
-		minor_date_form = '%M'
-		hours = dates.HourLocator()
-		minutes = dates.MinuteLocator()
-		date_form = dates.DateFormatter(date_form)
-		minor_date_form = dates.DateFormatter(minor_date_form)
-		ax1.xaxis.set_major_formatter(date_form)
-		ax1.xaxis.set_minor_formatter(minor_date_form)
-		ax1.set_xlim(date_time[0], date_time[-1])
+		# Fix axes
+
+		### X axis
 		ax1.set_xlabel('Time')
+		# Ensure the number of date ticks is sensible
+		timerange = date_time[-1] - date_time[0]
+		date_intvl = int(np.ceil(timerange.seconds/(5*60)))
+		ax1.xaxis.set_major_locator(plt.MaxNLocator(5)) # Maximum number of date ticks
+		ax1.xaxis.set_major_locator(dates.MinuteLocator(interval=date_intvl))
+		# ~ ax1.grid(color='k', linestyle = 'dashed', linewidth = 0.25, axis='x')
 
-		# Setting y axes
-		ax1.set_ylabel('Altitude / m')
-		ax2.set_ylabel('Latitude / $^\circ$')
-		plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section')
-		fig.colorbar(cs, cmap='RdBu_r', ax=ax1,
-			orientation='horizontal',
-			label='HLOS Rayleigh Wind Speed / ms-1')
+		### Y axis
+		ax1.set_ylabel('Altitude / km')
+		ax1.set_yticks(np.arange(len(y)))
+		ax1.yaxis.set_major_locator(plt.MaxNLocator(11))
+		ax1.yaxis.set_minor_locator(plt.MaxNLocator(21))
+		# ~ ax1.tick_params(axis='y', which='minor', left=True) # Minor ticks
+		ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y' ,which='both')
+
+		# Satellite track plot
+		ax2 = plt.subplot2grid((5,5), (0,3), colspan=2, rowspan=4)
+		ax2.yaxis.set_label_position("right")
+		ax2.yaxis.tick_right()
+		map = Basemap(projection='cyl',llcrnrlat=-80,urcrnrlat=-40,\
+					llcrnrlon=-80,urcrnrlon=-40,resolution='i', ax=ax2)
+		map.fillcontinents(color='#ffdd99', lake_color='#cceeff')
+		map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
+		map.drawcoastlines(linewidth=0.25, color='#666666')
+		map.drawmeridians([-70, -60, -50], linewidth=0.3)
+		map.drawparallels([-70, -60, -50], linewidth=0.3)
+		map.scatter(data_lon_new - 360, data_lat_new, marker = 'x', color = 'red', s=0.3, zorder=2)
+		map.plot(data_lon_new - 360, data_lat_new, color = 'red', linewidth = '0.5')
+		midpointlonindex = int(np.floor(len(data_lon_new)/2))
+		midpointlatindex = int(np.floor(len(data_lat_new)/2))
+		# ~ map.quiver(data_lon[midpointlonindex]-360, data_lat[midpointlatindex], data_lon[midpointlonindex+100] - data_lon[midpointlonindex-100], data_lat[midpointlatindex+100] - data_lat[midpointlatindex-100], color='black', zorder=3, headaxislength=0, headlength=0, pivot='middle')
+		# ~ map.quiver(data_lon[-1]-360, data_lat[-1], data_lon[-2]-data_lon[-1], data_lat[-2]-data_lat[-1], color='black', zorder=4)
+
+		# Add lines at time intervals corresponding to date_time ticks
+		date_ticks = dates.num2date(ax1.xaxis.get_ticklocs())
+
+		for i in range(len(date_ticks)):
+			# ~ print(date_ticks[i].minute)
+			# Co-locate between ticks and rayleigh_times array
+			nearest_date = find_nearest(rayleigh_times_new, date_ticks[i])
+			idx = (np.where(dates.date2num(rayleigh_times_new) == nearest_date)[0])[0]
+			str_time = date_ticks[i].strftime('%H:%M') # Sets string form of each tick
+			# Location of each line
+			lon_loc = data_lon_new[idx]-360
+			lat_loc = data_lat_new[idx]
+			# ~ map.scatter([lon_loc], [lat_loc], s=50, marker='+', zorder=111, color='black')
+			# Plots line on map and annotates with text
+			map.quiver(lon_loc, lat_loc, data_lat_new[idx-30] - data_lat_new[idx+30], data_lon_new[idx+30] - data_lon_new[idx-30], angles='xy', color='black', zorder=3, headaxislength=0, headlength=0, pivot='middle', units='xy')
+			ax2.annotate(str_time, (lon_loc+1, lat_loc+1), fontsize=6, zorder=5)
+			
+			# ~ a = ax1.xaxis.get_ticklabels()
+			# ~ print(text.Text(agg_filter=a))
+
+		# ~ map.plot([-70, -65], [-70, -67], color='k')
+
+		# Fix axes
+		ax2.set_xticks([-80, -70, -60, -50, -40])
+		ax2.set_yticks([-80, -70, -60, -50, -40])
+		ax2.set_xlabel('Longitude / deg')
+		ax2.set_ylabel('Latitude / deg')
+		ax2.set_aspect('auto') # Stretch map to fill subplot
+		for axis in ['top','bottom','left','right']: # Set axes thickness
+			ax1.spines[axis].set_linewidth(0.75)
+			ax2.spines[axis].set_linewidth(0.75)
+		
+		# Add colorbar to figure
+		fig.subplots_adjust(bottom=0.2, right=0.88, left=0.12)
+		cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.05])
+		fig.colorbar(cs, cmap='RdBu_r', orientation='horizontal',
+			label='HLOS Rayleigh Wind Speed / ms$^{-1}$', cax=cbar_ax)
+
 		# ~ plt.legend(loc=9)
 		pngsavename = str(filename)[:-3]
 		if complete_boxes != 0:
 			pngsavename += '_orb' + str(complete_boxes+1)
 		pngsavename += '.png'
-		plt.savefig(pngsavename,dpi=300)
-		plt.close()
+		# ~ plt.savefig(pngsavename,dpi=300)
+		
+		# Set figure title
+		plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section', y=15)
 		
 		# Climb out of plot directory
 		os.chdir('..')
 		os.chdir('..')
+		plt.savefig('testme.png',dpi=300)
 		
 		# Time taken for the file
 		fduration = datetime.now() - fstartTime

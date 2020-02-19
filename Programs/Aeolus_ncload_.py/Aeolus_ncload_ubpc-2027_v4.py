@@ -9,6 +9,7 @@ Aeolus data load from netCDF format
 ---v1.2---3.2.20-Updates------------------------------------------------
 ---v1.3---Deals with multiple orbits------------------------------------
 ----------simple_contourf-----------------------------------------------
+---v1.4---pcolormesh/imshow---------------------------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -34,14 +35,17 @@ from itertools import groupby
 
 # Import from functions file
 import sys
-sys.path.append('/media/GWR/AEOLUS/')
+sys.path.append('/media/NS/AEOLUS/')
 from phdfunctions import timeseriesplot, find_nearest
 from functions import ncload
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/media/GWR/AEOLUS/NC/'
+strdirectory = '/media/NS/AEOLUS/NC/'
+
+# Choose pcolor or imshow
+pc_or_im = 'im'
 
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -200,28 +204,13 @@ for file in os.listdir(directory):
 		MM = str(filename)[11:13]
 
 		# Enter corresponding YYYY directory
-		print('\n')
-		try:
-			os.mkdir(YYYY)
-			print("Directory ", YYYY, " created")
-		except OSError as e:
-				if e.errno == errno.EEXIST:
-					print("Directory ", YYYY, " already exists")
-				else:
-					raise
-		os.chdir(YYYY)
-
+		enterdirectory(YYYY)
+	
 		# Enter corresponding MM directory
-		try:
-			os.mkdir(MM)
-			print("Directory ", MM, " created")
-		except OSError as e:
-				if e.errno == errno.EEXIST:
-					print("Directory ", MM, " already exists")
-				else:
-					raise
-		os.chdir(MM)
+		enterdirectory(MM)
+
 		print(infile, '\n')
+		
 		# Plotting data
 		fig = plt.figure()
 		ax1 = fig.add_subplot(111)
