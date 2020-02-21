@@ -55,6 +55,7 @@ strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC/'
 
 # Choose pcolor or imshow
 pc_or_im = 'im'
+im_interp = 'sinc'
 
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -215,17 +216,8 @@ for file in os.listdir(directory):
 		# ~ np.save("date_time.npy", date_time, allow_pickle=True)
 		# ~ np.save("data_track.npy", [data_lat_new, data_lon_new], allow_pickle=True)
 		
-		plt.plot(data_lon_new - 360, data_lat_new)
-		plt.savefig('latlon.png')
-
 		YYYY = str(filename)[6:10]
 		MM = str(filename)[11:13]
-
-		# Enter corresponding YYYY directory
-		enterdirectory(YYYY)
-		
-		# Enter corresponding MM directory
-		enterdirectory(MM)
 
 		print(infile, '\n')
 		# Plotting data
@@ -252,7 +244,7 @@ for file in os.listdir(directory):
 			# Plots using imshow
 			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
 				x_lims[1], y_lims[0], y_lims[1]], vmin=-200, vmax=200,
-				interpolation='spline36')
+				interpolation=im_interp)
 			ax1.xaxis_date() # Initialises date axis
 			date_form = dates.DateFormatter('%H:%M') # Sets date format
 			ax1.xaxis.set_major_formatter(date_form)
@@ -341,14 +333,46 @@ for file in os.listdir(directory):
 			label='HLOS Rayleigh Wind Speed / ms$^{-1}$', cax=cbar_ax)
 
 		# Set figure title
-		plt.title('Aeolus Orbit HLOS Rayleigh Wind Cross-section', y=15)
+		print("Here:", str(filename)[6:-3]) # Here: 2019-08-11_224235
+		strdate = str(filename)[6:16]
+		print("strdate", strdate)
+		strtime = str(filename)[17:19] + ':' + str(filename)[19:21] + ':' + str(filename)[21:23]
+		print(strtime)
+		str_plt_title = 'Aeolus Orbit HLOS Rayleigh Wind Cross-section'
+		str_plt_title += '\n' + 'Orbit: ' + strdate + ' ' + strtime
+		plt.title(str_plt_title, y=15)
 
 		# ~ plt.legend(loc=9)
 		pngsavename = str(filename)[:-3]
 		if complete_boxes != 0:
 			pngsavename += '_orb' + str(complete_boxes+1)
+		if pc_or_im == 'pc':
+			pngsavename += '_pc'
+		elif pc_or_im == 'im':
+			pngsavename += '_im_' + im_interp
 		pngsavename += '.png'
-		plt.savefig(pngsavename,dpi=300)
+		print(pngsavename)
+		enterdirectory(pc_or_im)
+		if pc_or_im == 'im':
+			enterdirectory(im_interp)
+			
+			# Enter corresponding YYYY directory
+			enterdirectory(YYYY)
+		
+			# Enter corresponding MM directory
+			enterdirectory(MM)
+			
+			plt.savefig(pngsavename,dpi=300)
+			os.chdir('..')
+		else:
+			# Enter corresponding YYYY directory
+			enterdirectory(YYYY)
+		
+			# Enter corresponding MM directory
+			enterdirectory(MM)
+			
+			plt.savefig(pngsavename,dpi=300)
+		os.chdir('..')
 		
 		# Climb out of plot directory
 		os.chdir('..')
