@@ -5,7 +5,7 @@ Testbed
 ------------------------------------------------------------------------
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Splitting by time, into sections------------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file-------
 ------------------------------------------------------------------------
 ========================================================================
 Testbed
@@ -147,7 +147,7 @@ for date in range(len(day_starts)+1):
 	x, y, z = x[10:51], y[10:51], z[10:51]
 	fig = plt.figure()
 	ax1 = plt.subplot2grid((1,1), (0,0))
-	cs = plt.pcolormesh(x, y, z, cmap='plasma')
+	cs = plt.pcolormesh(x, y, z, cmap='plasma', vmin=120, vmax=300)
 	fig.colorbar(cs, cmap='plasma', orientation='horizontal',
 				label='Kinetic Temperature / K')
 	ax1.set_ylabel('Altitude / km')
