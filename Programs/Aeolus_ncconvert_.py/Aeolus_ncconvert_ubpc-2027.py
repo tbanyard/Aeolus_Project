@@ -39,15 +39,15 @@ def eachmonth(MM):
 	"""
 	# Aeolus directory
 	# ~ parent = '/home/tpb38/PhD/Bath/Aeolus/' #BALENA: '/home/a/tpb38/scratch/Aeolus/'
-	parent = '/media/GWR/AEOLUS/'
+	parent = '/media/NS/AEOLUS/'
 	# DBL file directory
 	# ~ dbl_dir = 'DATA2/' #BALENA: 'DBL/' #UBPC-2027 'DBL/'
 	dbl_dir = 'DBL/'
 	# NetCDF file save directory
-	nc_dir = 'NC/'
+	nc_dir = 'NC_QC/'
 
 	# Year
-	YYYY = 2020
+	YYYY = 2019
 	
 	# Set format for month
 	if MM < 10:
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 	"""Enables program to be executed using multiple processes/cores"""
 	startTime = datetime.now()
 	processes = []
-	for MM in range(1,3):
+	for MM in range(1,13):
 		p = multiprocessing.Process(target=eachmonth, args=(MM,))
 		processes.append(p)
 		p.start()

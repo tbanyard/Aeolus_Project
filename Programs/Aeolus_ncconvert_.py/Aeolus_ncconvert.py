@@ -50,7 +50,7 @@ def eachmonth(MM):
 	# DBL file directory
 	dbl_dir = 'DATA2/' #BALENA: 'DBL/'
 	# NetCDF file save directory
-	nc_dir = 'NC/'
+	nc_dir = 'NC3/'
 
 	# Year
 	YYYY = 2020
