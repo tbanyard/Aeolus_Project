@@ -4,6 +4,7 @@ Aeolus data conversion to netCDF format
 ========================================================================
 ------------------------------------------------------------------------
 ---v1.0---Initial_File--------------------------------------------------
+---v2-----Temporary File for creating NC files for Feb2020 - NCFlagsOnly
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -28,7 +29,7 @@ import sys
 # ~ sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
 # ~ sys.path.append('/home/a/tpb38/scratch/Aeolus/')
 sys.path.append('/media/NS/AEOLUS/')
-from functions2 import createAeolusncold, load_rayleigh_data
+from functions import *
 
 # Change current working directory to parent directory
 # ~ os.chdir('..')
@@ -44,7 +45,7 @@ def eachmonth(MM):
 	# ~ dbl_dir = 'DATA2/' #BALENA: 'DBL/' #UBPC-2027 'DBL/'
 	dbl_dir = 'DBL/'
 	# NetCDF file save directory
-	nc_dir = 'NC/'
+	nc_dir = 'NC_QCFlagsOnly/'
 
 	# Year
 	YYYY = 2020
@@ -60,7 +61,7 @@ def eachmonth(MM):
 	strdirectory = parent + dbl_dir + datetag
 	directory = os.fsencode(strdirectory)
 	
-	# ~ time.sleep(43000)
+	# ~ time.sleep(33000)
 	
 	# Loop through directory
 	for file in os.listdir(directory):
@@ -98,7 +99,7 @@ def eachmonth(MM):
 		sub = nc_dir + ncfilename
 		outfile = parent + sub
 		print(outfile)
-		createAeolusncold(dbl, outfile)
+		createAeolusQCnc(dbl, outfile)
 		
 		# Time taken for the entire program
 		fduration = datetime.now() - fstartTime

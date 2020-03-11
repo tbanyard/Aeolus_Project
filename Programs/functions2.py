@@ -378,7 +378,7 @@ def load_rayleigh_data(dbl):
 	Rayleigh_HLOS_Wind
 	
 
-def createAeolusnc(dbl, outfile):	
+def createAeolusncold(dbl, outfile):	
 	# Load data from DBL file
 	data = load_rayleigh_data(dbl)
 	rayleigh_time = data[4]
@@ -387,21 +387,6 @@ def createAeolusnc(dbl, outfile):
 	rayleigh_lon = data[2]
 	rayleigh_wind = data[0]
 	rayleigh_grouping = data[11]
-	Rayleigh_Wind_Prod_Conf_Data = data[13]
-	Rayleigh_HLOS_Wind = data[15]
-	L2B_Rayleigh_Hlos_Error_Estimate = []
-	observation_type = []
-	rayleigh_wind_QC = []
-	for i in range(len(Rayleigh_Wind_Prod_Conf_Data)):
-		L2B_Rayleigh_Hlos_Error_Estimate.append(Rayleigh_Wind_Prod_Conf_Data[i][2][0])
-	L2B_Rayleigh_Hlos_Error_Estimate = np.array(L2B_Rayleigh_Hlos_Error_Estimate)
-	for j in range(len(Rayleigh_HLOS_Wind)):
-		observation_type.append(Rayleigh_HLOS_Wind[j][2][1])
-	observation_type = np.array(observation_type)
-	for k in range(len(rayleigh_wind)):
-		if L2B_Rayleigh_Hlos_Error_Estimate[k] != 1.7e+38 and observation_type[k] == 2:
-			rayleigh_wind_QC.append(rayleigh_wind[k])
-	rayleigh_wind_QC = np.array(rayleigh_wind_QC)
 	
 	# Convert list of Rayleigh Group start times into a sensible format
 	RG = np.zeros(len(rayleigh_grouping))
@@ -421,50 +406,26 @@ def createAeolusnc(dbl, outfile):
 	root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
 	dim_time = root.createDimension("time", len(rayleigh_time))
 	dim_RG = root.createDimension("RG", len(RG))
-	dim_time_QC = root.createDimension("time_QC", len(rayleigh_wind_QC))
-	
 	var_time = root.createVariable("time", "f8", ("time",))
 	var_time.standard_name = "time"
 	var_time.long_name = "time"
 	var_time.units = time_units
-	
 	var_lon = root.createVariable("lon", "f8", ("time",))
 	var_lon.standard_name = "longitude"
 	var_lon.long_name = "Longitude"
 	var_lon.units = "degree_east"
-	
 	var_lat = root.createVariable("lat", "f8", ("time",))
 	var_lat.standard_name = "latitude"
 	var_lat.long_name = "Latitude"
 	var_lat.units = "degree_north"
-	
 	var_alt = root.createVariable("alt", "f8", ("time",))
 	var_alt.standard_name = "altitude"
 	var_alt.long_name = "Altitude"
 	var_alt.units = "m"
-	
-	var_wind = root.createVariable("Rayleigh_HLOS_wind_speed", "f8", ("time",))
+	var_wind = root.createVariable("HLOS_wind_speed", "f8", ("time",))
 	var_wind.standard_name = "wind_speed"
-	var_wind.long_name = "Rayleigh_Horizontal_Line_of_Sight_Wind_speed"
-	var_wind.units = "cm s-1"
-	
-	var_wind_QC = root.createVariable("Rayleigh_HLOS_wind_speed_QC", "f8", ("time_QC",))
-	var_wind_QC.standard_name = "wind_speed_qc"
-	var_wind_QC.long_name = "Rayleigh_Horizontal_Line_of_Sight_Wind_speed_after_quality_control"
-	var_wind_QC.notes = "The following quality controls have been applied to this variable: \
-	1) Rayleigh Cloudy data removed, leaving only Rayleigh Clear. 2) L2B_Rayleigh_Hlos_Error_Estimate must not equal 1.7e+38"
-	var_wind.units = "cm s-1"
-	
-	var_hlos_error = root.createVariable("L2B_Rayleigh_Hlos_Error_Estimate", "f8", ("time",))
-	var_hlos_error.standard_name = "hlos_error"
-	var_hlos_error.long_name = "L2B_Rayleigh_Hlos_Error_Estimate"
-	var_hlos_error.units = "cm s-1"
-	
-	var_observation_type = root.createVariable("observation_type", "f8", ("time",))
-	var_observation_type.standard_name = "observation_type"
-	var_observation_type.long_name = "Observation_Type: 1 = Cloudy, 2 = Clear"
-	var_observation_type.units = "unitless"
-	
+	var_wind.long_name = "Horizontal_Line_of_Sight_Wind speed"
+	var_wind.units = "m s-1"
 	# N.B. A variable 'var_RG' needs to be created for the plotting.
 	# It is of a different dimension though, that of len(RG_time).
 	var_RG = root.createVariable("RG", "f8", ("RG",))
@@ -472,154 +433,12 @@ def createAeolusnc(dbl, outfile):
 	var_RG.long_name = "Rayleigh_Grouping"
 	var_RG.units = "unitless"
 	
-	var_time[:], var_lon[:], var_lat[:], var_alt[:], var_wind[:], var_wind_QC[:], \
-	var_hlos_error[:], var_observation_type[:], var_RG[:] = rayleigh_time, \
-	rayleigh_lon, rayleigh_lat, rayleigh_alt, rayleigh_wind, rayleigh_wind_QC, \
-	L2B_Rayleigh_Hlos_Error_Estimate, observation_type, RG
+	var_time[:], var_lon[:], var_lat[:], var_alt[:], var_wind[:], \
+	var_RG[:] = rayleigh_time, rayleigh_lon, rayleigh_lat, rayleigh_alt, \
+	rayleigh_wind, RG
 	
 	print("Created file of type: ", root.data_model)
 	root.close()
 	
-def createAeolusQCnc(dbl, outfile):	
-	# Load data from DBL file
-	data = load_rayleigh_data(dbl)
-	rayleigh_time = data[4]
-	rayleigh_alt = data[3]
-	rayleigh_lat = data[1]
-	rayleigh_lon = data[2]
-	rayleigh_wind = data[0]
-	rayleigh_grouping = data[11]
-	Rayleigh_Wind_Prod_Conf_Data = data[13]
-	Rayleigh_HLOS_Wind = data[15]
-	L2B_Rayleigh_Hlos_Error_Estimate = []
-	observation_type = []
-	rayleigh_wind_QC = []
-	qcflag_both = []
-	qcflag_hloserr = []
-	qcflag_obstype = []
-	
-	# L2B_Rayleigh_Hlos_Error_Estimate and observation_type
-	for i in range(len(Rayleigh_Wind_Prod_Conf_Data)):
-		L2B_Rayleigh_Hlos_Error_Estimate.append(Rayleigh_Wind_Prod_Conf_Data[i][2][0])
-	L2B_Rayleigh_Hlos_Error_Estimate = np.array(L2B_Rayleigh_Hlos_Error_Estimate)
-	
-	for j in range(len(Rayleigh_HLOS_Wind)):
-		observation_type.append(Rayleigh_HLOS_Wind[j][2][1])
-	observation_type = np.array(observation_type)
-	
-	"""
-	for k in range(len(rayleigh_wind)):
-		if L2B_Rayleigh_Hlos_Error_Estimate[k] != 1.7e+38 and observation_type[k] == 2:
-			rayleigh_wind_QC.append(rayleigh_wind[k])
-	rayleigh_wind_QC = np.array(rayleigh_wind_QC)
-	"""
-	
-	# QCFlag_Both
-	for p in range(len(rayleigh_wind)):
-		if L2B_Rayleigh_Hlos_Error_Estimate[p] != 1.7e+38 and observation_type[p] == 2:
-			qcflag_both.append(1)
-		else:
-			qcflag_both.append(0)
-	qcflag_both = np.array(qcflag_both)
-	
-	# QCFlag_ObsType
-	for r in range(len(rayleigh_wind)):
-		if observation_type[r] == 2:
-			qcflag_obstype.append(1)
-		else:
-			qcflag_obstype.append(0)
-	qcflag_obstype = np.array(qcflag_obstype)    
-	
-	# QCFlag_HLOSErr
-	for q in range(len(rayleigh_wind)):
-		if L2B_Rayleigh_Hlos_Error_Estimate[q] != 1.7e+38:
-			qcflag_hloserr.append(1)
-		else:
-			qcflag_hloserr.append(0)
-	qcflag_hloserr = np.array(qcflag_hloserr)
-	
-	# Convert list of Rayleigh Group start times into a sensible format
-	RG = np.zeros(len(rayleigh_grouping))
-	for g in range(len(RG)):
-		RG[g] = (rayleigh_grouping[g][1])
-	
-	# Generate time_units string for .nc file using datetime.datetime array to
-	# midnight on the day of the first time element
-	time_units = "seconds since " + "2000-01-01" + " 00:00:00"
-	
-	# Creating netCDF file
-	root = nc.Dataset(outfile, 'w', format = "NETCDF4")
-	root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
-	root.institution = \
-	"University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
-	root.title = "Aeolus HLOS Rayleigh Wind Data"
-	root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
-	dim_time = root.createDimension("time", len(rayleigh_time))
-	dim_RG = root.createDimension("RG", len(RG))
-	
-	var_time = root.createVariable("time", "f8", ("time",))
-	var_time.standard_name = "time"
-	var_time.long_name = "time"
-	var_time.units = time_units
-	
-	var_lon = root.createVariable("lon", "f8", ("time",))
-	var_lon.standard_name = "longitude"
-	var_lon.long_name = "Longitude"
-	var_lon.units = "degree_east"
-	
-	var_lat = root.createVariable("lat", "f8", ("time",))
-	var_lat.standard_name = "latitude"
-	var_lat.long_name = "Latitude"
-	var_lat.units = "degree_north"
-	
-	var_alt = root.createVariable("alt", "f8", ("time",))
-	var_alt.standard_name = "altitude"
-	var_alt.long_name = "Altitude"
-	var_alt.units = "m"
-	
-	var_wind = root.createVariable("Rayleigh_HLOS_wind_speed", "f8", ("time",))
-	var_wind.standard_name = "wind_speed"
-	var_wind.long_name = "Rayleigh_Horizontal_Line_of_Sight_Wind_speed"
-	var_wind.units = "cm s-1"
-	
-	var_QCflag_both = root.createVariable("QC_Flag_Both", "f8", ("time",))
-	var_QCflag_both.standard_name = "qc_flag_both"
-	var_QCflag_both.long_name = "Binary flag corresponding to both QC filters"
-	var_QCflag_both.notes = "The following quality controls have been applied to this variable: \
-	1) Rayleigh Cloudy data removed, leaving only Rayleigh Clear. 2) L2B_Rayleigh_Hlos_Error_Estimate must not equal 1.7e+38."
-	var_QCflag_both.key = "1 = GOOD, 0 = BAD"
-	var_QCflag_both.units = "unitless"
-	
-	var_QCflag_obstype = root.createVariable("QC_Flag_ObsType", "f8", ("time",))
-	var_QCflag_obstype.standard_name = "qc_flag_obstype"
-	var_QCflag_obstype.long_name = "Binary flag corresponding to only the observation type QC filter"
-	var_QCflag_obstype.notes = "The following quality controls have been applied to this variable: \
-	1) Rayleigh Cloudy data removed, leaving only Rayleigh Clear."
-	var_QCflag_obstype.key = "1 = GOOD (Clear Sky), 0 = BAD (Cloudy)"
-	var_QCflag_obstype.units = "unitless"
-	
-	var_QCflag_hloserr = root.createVariable("QC_Flag_HLOSErr", "f8", ("time",))
-	var_QCflag_hloserr.standard_name = "qc_flag_hloserr"
-	var_QCflag_hloserr.long_name = "Binary flag corresponding to only the L2B Rayleigh HLOS Error QC filter"
-	var_QCflag_hloserr.notes = "The following quality controls have been applied to this variable: \
-	1) L2B_Rayleigh_Hlos_Error_Estimate must not equal 1.7e+38."
-	var_QCflag_hloserr.key = "1 = GOOD, 0 = BAD"
-	var_QCflag_hloserr.units = "unitless"
-	
-	# N.B. A variable 'var_RG' needs to be created for the plotting.
-	# It is of a different dimension though, that of len(RG_time).
-	var_RG = root.createVariable("RG", "f8", ("RG",))
-	var_RG.standard_name = "rayleigh_grouping"
-	var_RG.long_name = "Rayleigh_Grouping"
-	var_RG.units = "unitless"
-	
-	var_time[:], var_lon[:], var_lat[:], var_alt[:], var_wind[:], var_QCflag_both[:],  \
-	var_QCflag_obstype[:],  var_QCflag_hloserr[:], var_RG[:] = rayleigh_time, \
-	rayleigh_lon, rayleigh_lat, rayleigh_alt, rayleigh_wind, qcflag_both, \
-	qcflag_obstype, qcflag_hloserr, RG
-	
-	print("Created file of type: ", root.data_model)
-	root.close()
-
 def ncload():
 	return
