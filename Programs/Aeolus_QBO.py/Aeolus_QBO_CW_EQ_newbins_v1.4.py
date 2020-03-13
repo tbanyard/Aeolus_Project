@@ -6,6 +6,8 @@ Aeolus data load for Corwin's QBO .mat files
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Testing, still with pcolormesh only---------------------------
 ---v1.2---Improving plot quality----------------------------------------
+---v1.3---Creating 2D Test figure to see data gaps----------------------
+---v1.4---Improving quality of maps-------------------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -29,6 +31,8 @@ from scipy.interpolate import griddata
 from scipy.io import savemat, loadmat
 from itertools import groupby
 from mpl_toolkits.basemap import Basemap
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from matplotlib import colorbar
 
 # Import from functions file
 import sys
@@ -230,7 +234,77 @@ for i in range(len(matZ[0])):
 	plt.plot(x2, y2)
 	plt.savefig(figname,dpi=300)"""
 	
-# 2D Test Figure
+sys.exit(0)
+	
+"""=========================================================================="""
+"""=============================2D Test Figure==============================="""
+"""=========================================================================="""
+plt.close()
+fig2 = plt.figure()
+ax = fig2.add_subplot(111)
 
+# Create datetime array using basedate and matTime array
+basedate = datetime(2000, 1, 1)
+dtTime = np.full(len(matTime[0]), basedate)
+for t in range(len(matTime[0])):
+	dtTime[t] += timedelta(days=int(matTime[0][t]))
+mplTime = dates.date2num(dtTime)
+
+x = matTime[0]
+x = mplTime
+y = matZ[0][7:]
+x, y = np.meshgrid(x, y)
+
+alpha = 1
+alpha_itrn = 0
+for fractionrequired in [0.1, 0.25, 0.5, 0.75, 0.9]:
+	alpha_itrn += 1
+	alpha -= 0.35 / alpha_itrn
+	# ~ fractionrequired = 0.1 # Between 0-1 for 0-100%
+	gapsbinaryarray = np.empty((86, 89), dtype=int)
+	for j in range(len(matTime[0])):
+		for k in range(len(matZ[0])):
+			isnanarray = np.isnan(matData[j,:,:,k])
+			unique, counts = np.unique(isnanarray, return_counts=True)
+			countdict = dict(zip(unique, counts))
+			try:
+				countdict[True]
+			except:
+				fractionempty = 1
+			else:
+				fractionempty = countdict[True] / np.size(isnanarray)
+			
+			if 1-fractionempty<fractionrequired:
+				gapsbinaryarray[j, k] = 0
+			else:
+				gapsbinaryarray[j, k] = 1
+	z = np.transpose(gapsbinaryarray[:,7:])
+	newcmp = LinearSegmentedColormap('testCmap', segmentdata=customcolormaps('wg'), N=265)
+	cs2d = plt.pcolormesh(x, y, z, cmap=newcmp, edgecolor = 'white', linewidth = 0.25, alpha=alpha, zorder=3)
+
+ax.set_yticks(np.linspace(6,24,10))
+ax.xaxis_date() # Initialises date axis
+date_form = dates.DateFormatter('%b\n%Y') # Sets date format
+ax.xaxis.set_major_formatter(date_form)
+for label in ax.get_xticklabels(): # Center align x tick labels
+    label.set_ha("center")
+ax.set_xlabel('Date')
+ax.set_ylabel('Altitude / km')
+plt.ylim(5.75, 24)
+ax.yaxis.set_minor_locator(plt.MaxNLocator(19))
+plt.subplots_adjust(bottom = 0.15, right=0.85, top=0.9)
+plt.title('Aeolus Data Coverage for the 35$^{\circ}$N/S Equatorial Band')
+# ~ fig.colorbar(cs2d, ax=ax, orientation='vertical')
+
+plottestcmp = LinearSegmentedColormap('testCmap', segmentdata=customcolormaps('2dplottest'), N=265)
+cbar_ax = fig2.add_axes([0.87, 0.15, 0.02, 0.75], zorder=5)
+colorbar.ColorbarBase(cbar_ax, cmap = plottestcmp, orientation='vertical',
+	label='Coverage / %', boundaries = [0,10,25,50,75,90,100])
+# ~ fig2.colorbar(cs2d, cmap='RdBu', orientation='vertical',
+	# ~ label='Coverage / %', cax=cbar_ax, boundaries = [0,10,25,50,75,90,100])
+for axis in ['top','bottom','left','right']: # Set axes thickness
+	ax.spines[axis].set_linewidth(1.5)
+ax.grid(False)
+plt.savefig('2dplottest.png',dpi=300)
 
 os.chdir('..')
