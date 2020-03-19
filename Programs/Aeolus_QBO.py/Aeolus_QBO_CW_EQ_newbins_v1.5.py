@@ -8,6 +8,7 @@ Aeolus data load for Corwin's QBO .mat files
 ---v1.2---Improving plot quality----------------------------------------
 ---v1.3---Creating 2D Test figure to see data gaps----------------------
 ---v1.4---Improving quality of maps-------------------------------------
+---v1.5---Looping over height levels and days---------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -96,12 +97,21 @@ print(os.getcwd())
 os.chdir('Plots')
 # Initialise figure
 fig = plt.figure()
-ax = fig.add_subplot(111)
-gridspec.GridSpec(4,4) # Initialise gridspec
-# Colormap
+outer = gridspec.GridSpec(4,4) # Initialise gridspec
+# ~ subplotparams = gridspec.GridSpec.get_subplot_params(outer)
+# Colormaps
 qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap2'), N=265)
 grayhatchescmap = LinearSegmentedColormap('Grayhatchescmap', segmentdata=customcolormaps('grayhatches'), N=265)
+grayhatchescmap_r = grayhatchescmap.reversed()
 blackhatchescmap = LinearSegmentedColormap('Blackhatchescmap', segmentdata=customcolormaps('blackhatches'), N=265)
+blackhatchescmap_r = blackhatchescmap.reversed()
+
+"""================Looping through each of the three subplots================"""
+# ~ ax1 = plt.subplot2grid((4,4), (2,0), colspan=4, rowspan=1)
+# ~ ax2 = plt.subplot2grid((4,4), (1,0), colspan=4, rowspan=1)
+
+# ~ for ax in [
+
 
 """===================================AX1===================================="""
 
@@ -115,11 +125,12 @@ map = Basemap(projection='cyl',llcrnrlat=-30,urcrnrlat=30,\
 # ~ map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
 
 # Initialise z array and apply filters
-z = matData[80,:,1:-2,50]
+z = matData[24,:,1:-2,58]
 z[-1,:] = z[0,:]
-strheight = '17 $\pm$ 1 km'
+strheight = '19 $\pm$ 1 km'
 z = np.transpose(z)/100
 z = np.nan_to_num(z) # This needs to be changed to the mean or interpolate
+# ~ z = ndimage.uniform_filter(z, size=(3,2), mode = 'reflect')
 z = savgol_filter(z, 9, 2, axis = 0) # Meridional boxcar
 # ~ z = savgol_filter(z, 5, 2, axis = 1) # Zonal boxcar
 # ~ z = ndimage.gaussian_filter(z, sigma=0.5, order=0) # Have tried sigma=0.6
@@ -182,9 +193,9 @@ map = Basemap(projection='cyl',llcrnrlat=-30,urcrnrlat=30,\
 # ~ map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
 
 # Initialise z array and apply filters
-z = matData[80,:,1:-2,58]
+z = matData[24,:,1:-2,66] # 19km = 58
 z[-1,:] = z[0,:]
-strheight = '19 $\pm$ 1 km'
+strheight = '21 $\pm$ 1 km'
 z = np.transpose(z)/100
 z = np.nan_to_num(z) # This needs to be changed to the mean or interpolate
 z = savgol_filter(z, 9, 2, axis = 0) # Meridional boxcar
@@ -202,10 +213,11 @@ lons, lats = np.meshgrid(matLon[0], matLat[0][1:-2])
 x, y = map(lons,lats)
 
 # Plotting Data
-# ~ cs3 = plt.imshow(z, aspect='auto', cmap='RdYlBu_r', extent=[x_lims[0],
-				# ~ x_lims[1], y_lims[0], y_lims[1]], vmin=-30, vmax=30,
-				# ~ interpolation=im_interp)
+# ~ cstest2 = plt.imshow(z, aspect='auto', cmap=qbocmap, extent=[-180,
+				# ~ 180, -30, 30], vmin=-30, vmax=30, origin = 'lower',
+				# ~ interpolation='none')
 # ~ plt.gca().invert_yaxis() # Invert axis for imshow
+# ~ cstest = plt.pcolormesh(x, y, z, cmap=qbocmap)
 # ~ cs3 = plt.pcolormesh(x, y, z, cmap='RdYlBu_r', shading = 'bilinear', vmin=-30, vmax=30, alpha=1, zorder=3)
 # ~ cs3 = plt.contourf(x, y, z, cmap='RdYlBu_r', levels = 7, vmin=-30, vmax=30, alpha=1, zorder=3)
 cs3 = plt.contourf(xi2, yi2, zi2, cmap=qbocmap, levels=[-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], vmin=-30, vmax=30, alpha=1, zorder=3)
@@ -244,9 +256,9 @@ map = Basemap(projection='cyl',llcrnrlat=-30,urcrnrlat=30,\
 # ~ map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
 
 # Initialise z array and apply filters
-z = matData[80,:,1:-2,67] #66 = 21km
+z = matData[24,:,1:-2,74] #66 = 21km
 z[-1,:] = z[0,:]
-strheight = '21 $\pm$ 1 km'
+strheight = '23 $\pm$ 1 km'
 z = np.transpose(z)/100
 
 # NAN stuff
@@ -264,10 +276,11 @@ for lonidx in range(len(isnanarray)):
 			hatcharray[lonidx][latidx] = 1
 		else:
 			hatcharray[lonidx][latidx] = 0
-		
-z = np.nan_to_num(z) # This needs to be changed to the mean or interpolate
-z = savgol_filter(z, 9, 2, axis = 0) # Meridional boxcar
-# ~ z = savgol_filter(z, 5, 2, axis = 1) # Zonal boxcar
+
+# ~ z = np.nan_to_num(z) # This needs to be changed to the mean or interpolate
+z = ndimage.uniform_filter(z, size=(3,4), mode = 'reflect')
+# ~ z = savgol_filter(z, 9, 2, axis = 0) # Meridional S-G filter
+# ~ z = savgol_filter(z, 5, 2, axis = 1) # Zonal S-G filter
 # ~ z = ndimage.gaussian_filter(z, sigma=0.5, order=0) # Have tried sigma=0.6
 
 # Attempted griddata interpolation with imshow
@@ -296,15 +309,16 @@ x, y = map(lons,lats)
 # ~ plt.gca().invert_yaxis() # Invert axis for imshow
 # ~ cs3 = plt.pcolormesh(x, y, z, cmap='RdYlBu_r', shading = 'bilinear', vmin=-30, vmax=30, alpha=1, zorder=3)
 # ~ cs3 = plt.contourf(x, y, z, cmap='RdYlBu_r', levels = 7, vmin=-30, vmax=30, alpha=1, zorder=3)
-cs3 = plt.contourf(xi2, yi2, zi2, cmap=qbocmap, levels=[-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], vmin=-30, vmax=30, alpha=1, zorder=3)
+cs3 = plt.contourf(xi2, yi2, zi2, cmap=qbocmap, levels=[-50,-45,-40,-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35,40,45,50], vmin=-30, vmax=30, alpha=1, zorder=3)
 # ~ cs4 = plt.contour(x, y, z, colors = 'k', linestyles = 'dotted', linewidths = 0.3, interpolation = 'bicubic', vmin=-30, vmax=30, alpha=1, zorder=3)
-cs4 = plt.contour(xi2, yi2, zi2, levels=[-30,-20,-10,10,20,30], linewidths = 0.4, colors='k', vmin=-30, vmax=30, alpha=1, zorder=3)
+cs4 = plt.contour(xi2, yi2, zi2, levels=[-50,-40,-30,-20,-10,10,20,30,40,50], linewidths = 0.4, colors='k', vmin=-30, vmax=30, alpha=1, zorder=3)
 cs5 = plt.contour(xi2, yi2, zi2, levels=[0], linewidths = 0.8, colors = 'k', alpha=1, zorder=4)
 # ~ cs4 = plt.contour(xi2, yi2, zi2, linestyles = 'solid', levels = 11, linewidths = 0.3, colors='k', vmin=-30, vmax=30, alpha=1, zorder=3)
-cls = plt.clabel(cs4, [-30,-20,-10,10,20,30], fmt = '%i', fontsize=4, inline_spacing=1)
+cls = plt.clabel(cs4, [-40,-30,-20,-10,10,20,30,40], fmt = '%i', fontsize=4, inline_spacing=1)
 cls2 = plt.clabel(cs5, [0], fmt = '%i', fontsize=4, inline_spacing=1)
-hatchescontour = plt.contour(x, y, hatcharray, levels = [0.75], colors = 'k', linestyles = 'dashed', linewidths = 1, alpha = 1, zorder = 5)
-hatches = plt.contourf(x, y, hatcharray, levels = 2, cmap = blackhatchescmap, alpha = 0.25, zorder = 5)
+mask = plt.pcolor(x, y, hatcharray, cmap = grayhatchescmap, facecolor = 'r', zorder = 5, edgecolor = 'none')
+# ~ hatchescontour = plt.contour(x, y, hatcharray, levels = [0.75], interpolation = 0, colors = 'k', linestyles = 'dashed', linewidths = 1, alpha = 1, zorder = 5)
+# ~ hatches = plt.contourf(x, y, hatcharray, levels = 2, cmap = blackhatchescmap, alpha = 0.25, zorder = 5)
 
 # Complete basemap
 map.drawcoastlines(linewidth=0.25, color='#666666', zorder=4)
@@ -326,7 +340,7 @@ ax3.set_title(strheight, {'fontsize': 11})
 # Add colorbar to plot
 cbar_ax = fig.add_axes([0.125, 0.125, 0.785, 0.025], zorder=5)
 colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
-	label='HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], ticks=[-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], extend='both')
+	label='HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], ticks=[-35,-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30,35], extend='both')
 for label in cbar_ax.get_xticklabels(): # Center align colorbar tick labels
     label.set_ha("center")
 
@@ -347,7 +361,7 @@ plt.subplots_adjust(left = 0.125, bottom = -0.03, right=0.91, top=0.875)
 
 # Saving figure
 os.chdir('CW_QBOplots')
-plt.savefig('CW_QBOplot2.png',dpi=300)
+plt.savefig('CW_QBOplot6.png',dpi=300)
 
 sys.exit(0) # Do not continue onto 2D Test Figure? (Toggle on/off)
 	
