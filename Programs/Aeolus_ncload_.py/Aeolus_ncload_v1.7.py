@@ -64,6 +64,10 @@ strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4/'
 pc_or_im = 'im'
 im_interp = 'sinc'
 
+# Set oldinterp to True to use the old interpolation routine (nearest)
+oldinterp = False
+
+# Iterate through files in directory
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
 	
@@ -168,75 +172,72 @@ for file in os.listdir(directory):
 		z_itrn = np.zeros((len(alts),len(RG)))
 		# ~ print(np.shape(z))
 		
-		# Placing wind values into bins of height 1km and width
-		# 1 rayleigh group
-		lastgroupstarttime = 0
-		RG_start = 0
-		for RG_elmnt in range(len(RG)):
-			for t in range(len(rayleigh_times_new)):
-				# Find all elements inside this sandwich and add to z
-				# and z_itrn:
-				if rayleigh_times_new[t] < RG[RG_elmnt] and \
-				rayleigh_times_new[t] >= lastgroupstarttime:
-					if RG_start == 0:
-						RG_start = RG_elmnt
-					# Find the nearest altitude level
-					val = find_nearest(alts, data_alt_new[t])
-					alt_elmnt = np.where(alts == val)[0][0]
-					# Cap wind speeds to 250 m/s
-					if np.abs(data_HLOS_new[t]) < 25000:
-						z[alt_elmnt][RG_elmnt] += data_HLOS_new[t]
-						z_itrn[alt_elmnt][RG_elmnt] += 1
-					RG_end = RG_elmnt
-			lastgroupstarttime = RG[RG_elmnt]
-		
-		"""26.03.30 - EDIT_START"""
-		# =========================
-		z_500m = np.zeros((len(alts),len(RG))) # NumPy Arrays
-		points = np.empty(0)
-		values = np.empty(0)
-		lastgroupstarttime = 0
-		RG_start = 0
-		for RG_elmnt in range(len(RG)):
-			for t in range(len(rayleigh_times_new)):
-				# Find all elements inside this sandwich and add to z
-				# and z_itrn:
-				if rayleigh_times_new[t] < RG[RG_elmnt] and \
-				rayleigh_times_new[t] >= lastgroupstarttime:
-					if RG_start == 0:
-						RG_start = RG_elmnt
-					# Cap wind speeds to 250 m/s
-					if np.abs(data_HLOS_new[t]) < 25000:
-						
-						if data_alt_new[t] in points:
-							itis = np.where(points == data_alt_new[t])
-							# ~ values[itis[0][0]] += data_HLOS_new[t]
-							# ~ values[itis[0][0]] /= 2
-							
-						points = np.append(points, data_alt_new[t])
-						values = np.append(values, data_HLOS_new[t])
-					RG_end = RG_elmnt
-			lastgroupstarttime = RG[RG_elmnt]
-			z_500m[:, RG_elmnt] = griddatainterpolation(points, values, alts)
+		# ============OLD INTERPOLATION ROUTINE==============
+		if oldinterp == True:
+			# Placing wind values into bins of height 1km and width
+			# 1 rayleigh group
+			lastgroupstarttime = 0
+			RG_start = 0
+			for RG_elmnt in range(len(RG)):
+				for t in range(len(rayleigh_times_new)):
+					# Find all elements inside this sandwich and add to z
+					# and z_itrn:
+					if rayleigh_times_new[t] < RG[RG_elmnt] and \
+					rayleigh_times_new[t] >= lastgroupstarttime:
+						if RG_start == 0:
+							RG_start = RG_elmnt
+						# Find the nearest altitude level
+						val = find_nearest(alts, data_alt_new[t])
+						alt_elmnt = np.where(alts == val)[0][0]
+						# Cap wind speeds to 250 m/s
+						if np.abs(data_HLOS_new[t]) < 25000:
+							z[alt_elmnt][RG_elmnt] += data_HLOS_new[t]
+							z_itrn[alt_elmnt][RG_elmnt] += 1
+						RG_end = RG_elmnt
+				lastgroupstarttime = RG[RG_elmnt]
+		# ===================================================			
+		else:
+		# ============NEW INTERPOLATION ROUTINE==============
+			z_new = np.zeros((len(alts),len(RG))) # NumPy Arrays
 			points = np.empty(0)
 			values = np.empty(0)
-		
-		# ~ print(z_500m)
-		z = np.copy(z_500m) / 100
+			lastgroupstarttime = 0
+			RG_start = 0
+			for RG_elmnt in range(len(RG)):
+				for t in range(len(rayleigh_times_new)):
+					# Find all elements inside this sandwich and add to z
+					# and z_itrn:
+					if rayleigh_times_new[t] < RG[RG_elmnt] and \
+					rayleigh_times_new[t] >= lastgroupstarttime:
+						if RG_start == 0:
+							RG_start = RG_elmnt
+						# Cap wind speeds to 250 m/s
+						if np.abs(data_HLOS_new[t]) < 25000:
+							if data_alt_new[t] in points:
+								itis = np.where(points == data_alt_new[t])
+							points = np.append(points, data_alt_new[t])
+							values = np.append(values, data_HLOS_new[t])
+						RG_end = RG_elmnt
+				lastgroupstarttime = RG[RG_elmnt]
+				z_new[:, RG_elmnt] = griddatainterpolation(points, values, alts)
+				points = np.empty(0)
+				values = np.empty(0)
+		# ===================================================
 							
-		# Find the mean for each bin (Toggle on for old version)
-		# ~ z /= 100 * z_itrn # Factor of 100 for conversion from cm/s - m/s
-		# ~ print(z)
-		
-		# =========================
-		"""26.03.30 - EDIT_END"""
-		
+		# Find the mean for each bin (Toggled on for old interpolation)
+		if oldinterp == True:
+			z /= 100 * z_itrn # Factor of 100 for conversion from cm/s - m/s
+		else:
+			# Using new interpolation routine
+			z = np.copy(z_new) / 100
+				
 		# Amend RG array
 		RG_new = RG[RG_start:RG_end+1]
 		z = z[:, RG_start:RG_end+1]
 		print(RG_start)
 		print(RG_end)
 		
+		# Fixing time dimension to match coda format
 		date_time = coda.time_to_utcstring(RG_new[:])
 		date_time = np.array([datetime.strptime(date,
 			'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
@@ -246,7 +247,7 @@ for file in os.listdir(directory):
 			'%Y-%m-%d %H:%M:%S.%f') for date in rayleigh_times_new])
 		x, y = np.meshgrid(date_time, alts)
 		
-		# Applying NaN mask (26.03.20)
+		# Applying NaN mask
 		grayhatchescmap = LinearSegmentedColormap('Grayhatchescmap',
 			segmentdata=customcolormaps('grayhatches'), N=265)
 		isnanarray = np.isnan(z)
@@ -313,9 +314,9 @@ for file in os.listdir(directory):
 			# Plots using imshow
 			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
 				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
-				interpolation='sinc')
-			mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap, extent=[x_lims[0],
-				x_lims[1], y_lims[0], y_lims[1]], interpolation='none')
+				interpolation='none')
+			mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap,
+				extent=[x_lims[0], x_lims[1], y_lims[0], y_lims[1]], interpolation='none')
 			ax1.xaxis_date() # Initialises date axis
 			date_form = dates.DateFormatter('%H:%M') # Sets date format
 			ax1.xaxis.set_major_formatter(date_form)
