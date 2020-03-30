@@ -14,6 +14,7 @@ Aeolus data load from netCDF format
 ---v1.6---23.03.20-Updates: Applying S-G Filter and 2D Boxcar on data---
 ---v1.7---Experimenting with 500m bins, with interpolation, different---
 ----------scheme for dealing with NaNs etc.-----------------------------
+---v1.8---ERA5 interpolated onto Aeolus track---------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -57,8 +58,10 @@ os.chdir('..')
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
-"""Find directory and read netCDF data"""
+"""Find directory and read Aeolus netCDF data"""
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4/'
+"""ERA5 directory"""
+ERA5_dir = '/home/tpb38/PhD/Bath/ERA5/'
 
 # Choose pcolor or imshow
 pc_or_im = 'im'
@@ -172,6 +175,124 @@ for file in os.listdir(directory):
 		rayleigh_times_new = rayleigh_times[start_elmnt:end_elmnt+1]
 
 		"""=========================================================="""
+		"""=====================ERA5 Interpolation==================="""
+		"""=========================================================="""
+		# =========================Load ERA5 Data=======================
+		# Read data for the current date
+		YYYY = str(filename)[6:10]
+		MM = str(filename)[11:13]
+		DD = str(filename)[14:16]
+		doy = yyyymmdd_to_doy(YYYY, MM, DD)
+		ncfile = ERA5_dir + str(YYYY) + '/era5_' + str(YYYY) + 'd' \
+		+ doy + '.nc'
+		print('ERA5 netCDF file:')
+		print(ncfile, '\n')
+		data = ERA5_dataload(ncfile)
+		
+		# Create special variables for ERA5 interpolation
+		data_lon_new_ae = np.copy(data_lon_new)
+		data_lat_new_ae = np.copy(data_lat_new)
+		data_alt_new_ae = np.copy(data_alt_new)
+		
+		# Pass ERA5 data into their respective variables
+		ERA5_data_lon, ERA5_data_lat, ERA5_data_lev, \
+		ERA5_data_temp, ERA5_data_u, ERA5_data_v, \
+		ERA5_data_time = data[0], data[1], data[2], data[3], \
+		data[4], data[5], data[6]
+		
+		# Read data for the next date
+		nextday_dt = yyyymmdd_nextday(YYYY, MM, DD)
+		YYYY2, MM2, DD2 = nextday_dt.year, nextday_dt.month, \
+		nextday_dt.day
+		doy2 = yyyymmdd_to_doy(YYYY2, MM2, DD2)
+		# Specify ERA5 data file
+		ncfile = ERA5_dir + str(YYYY2) + '/era5_' + str(YYYY2) + \
+		'd' + doy2 + '.nc'
+		print('Following ERA5 netCDF file:')
+		print(ncfile, '\n')
+		data = ERA5_dataload(ncfile)
+		
+		# Pass ERA5 data for the next date into their respective
+		# variables
+		ERA5_data_temp, ERA5_data_u, ERA5_data_v, ERA5_data_time = \
+		np.append(ERA5_data_temp, data[3], axis=0), \
+		np.append(ERA5_data_u, data[4], axis=0), \
+		np.append(ERA5_data_v, data[5], axis=0), \
+		np.append(ERA5_data_time, data[6], axis=0)
+		
+		# Load any text files into arrays
+		ERA5_p_levels = np.loadtxt("ERA5_pressure_levels.txt")*100
+		ERA5_altitudes = np.loadtxt("ERA5_altitudes.txt")
+		ERA5_levels = np.loadtxt("ERA5_pressure_levels_labels.txt")
+		# ==============================================================
+		
+		# =======================Run Interpolation======================
+		# Create a datetime format version of rayleigh_times_new
+		ERA5_interpolated = np.empty(0)
+		no_result = 0
+		rayleigh_times_new_dt = \
+		coda.time_to_utcstring(rayleigh_times_new[:])
+		rayleigh_times_new_dt = np.array([datetime.strptime(date,
+			'%Y-%m-%d %H:%M:%S.%f') for date in rayleigh_times_new_dt])
+		for t in range(len(rayleigh_times_new_dt)):
+			# Finding the correct time array elements  
+			rounded_down = round_down_3_hours(rayleigh_times_new_dt[t])
+			rounded_up = round_up_3_hours(rayleigh_times_new_dt[t])
+			down_elmt = np.where(ERA5_data_time == rounded_down)
+			up_elmt = np.where(ERA5_data_time == rounded_up)
+			
+			# Toggle between ERA5 sandwich times at 3hr intervals
+			# and interpolate between them
+			for t_E in [down_elmt, up_elmt]:
+				t_E = t_E[0][0] # t_E = ERA5 time element
+				if t_E == down_elmt[0][0]:
+					time_toggle = 0
+				elif t_E == up_elmt[0][0]:
+					time_toggle = 1
+				else:
+					print("Error")
+				# Call run_interpolation to execute 3D spatial
+				# interpolation of ERA5 data onto Aeolus track
+				ERA5_var = ERA5_data_u
+				result = run_interpolation(data_lat_new_ae,
+				data_lon_new_ae, data_alt_new_ae, 
+				ERA5_data_lat, ERA5_data_lon, ERA5_altitudes, ERA5_var, t, t_E)
+				# Raise flag if there is no result
+				if result == None:
+					no_result = 1
+					continue
+				# Set up and down times
+				if time_toggle == 0:
+					down = result
+					# ~ print("Down = ", down[0])			
+				elif time_toggle == 1:
+					up = result
+					# ~ print("Up = ", up[0])
+				if no_result == 1:
+					break
+			
+			# Break out of loop if there is no result		
+			if no_result == 1:
+				ERA5_interpolated = np.append(ERA5_interpolated, 99999)
+				no_result = 0
+				continue
+			
+			# Linear interpolation in time using linearinterp2kp
+			# function
+			x_0 = toTimestamp(ERA5_data_time[down_elmt[0][0]])
+			x_1 = toTimestamp(ERA5_data_time[up_elmt[0][0]])
+			x = toTimestamp(rayleigh_times_new_dt[t])
+			y_0 = down[0]
+			y_1 = up[0]
+			y = linearinterp2kp(x, x_0, x_1, y_0, y_1)
+			
+			ERA5_interpolated = np.append(ERA5_interpolated, y)
+
+		print(len(ERA5_interpolated))
+		print(len(rayleigh_times_new))
+		# ~ data_HLOS_new = np.copy(ERA5_interpolated)*-100
+		print(data_HLOS_new)
+		"""=========================================================="""
 		"""=================Creating arrays for plot================="""
 		"""=========================================================="""
 
@@ -249,8 +370,6 @@ for file in os.listdir(directory):
 		# Amend RG array
 		RG_new = RG[RG_start:RG_end+1]
 		z = z[:, RG_start:RG_end+1]
-		print(RG_start)
-		print(RG_end)
 		
 		# Fixing time dimension to match coda format
 		date_time = coda.time_to_utcstring(RG_new[:])
@@ -455,6 +574,7 @@ for file in os.listdir(directory):
 			str(filename)[21:23]
 		print(strtime)
 		str_plt_title = 'Aeolus Orbit HLOS Rayleigh Wind Cross-section'
+		# ~ str_plt_title = 'ERA5 interpolated onto Aeolus Orbit S-G 5-15km Band Pass'
 		str_plt_title += '\n' + 'Orbit: ' + strdate + ' ' + strtime
 		plt.title(str_plt_title, y=15)
 
@@ -493,7 +613,7 @@ for file in os.listdir(directory):
 		# Climb out of plot directory
 		os.chdir('..')
 		os.chdir('..')
-		plt.savefig('testme2.png',dpi=300)
+		plt.savefig('testme3.png',dpi=300)
 		
 		# Time taken for the file
 		fduration = datetime.now() - fstartTime
