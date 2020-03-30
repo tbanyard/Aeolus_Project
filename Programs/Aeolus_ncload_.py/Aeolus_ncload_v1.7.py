@@ -159,7 +159,7 @@ for file in os.listdir(directory):
 		"""=========================================================="""
 
 		# Initialise meshgrids for x, y and z
-		alts = np.linspace(0,20000, 41)
+		alts = np.linspace(0,20000, 21)
 		# ~ #Lists
 		# ~ z = [[0 for _ in range(len(RG))] for _ in range(len(alts))]
 		# ~ z_itrn = \
@@ -294,7 +294,7 @@ for file in os.listdir(directory):
 			x_lims = [np.ndarray.flatten(x)[0], np.ndarray.flatten(x)[-1]]
 			x_lims = dates.date2num(x_lims)
 			# Y limits
-			y_lims = [20.25, -0.25]
+			y_lims = [20.5, -0.5]
 			fixnanswithmean(z) # Uses my own function 'fixnanswithmean'	
 			
 			# Test using Gaussian noise
@@ -307,14 +307,15 @@ for file in os.listdir(directory):
 			z2 = savgol_filter(z, 15, 2, axis = 0) # Vertical S-G filter
 			z3 = savgol_filter(z, 5, 2, axis = 0)
 			# ~ z2 = savgol_filter(z, 15, 2, axis = 1) # Horizontal S-G filter
-			z = z2 - z3
+			z = z3 - z2
+			# ~ z = z1 - z2
 						
 			# Plots using imshow
 			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
 				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
-				interpolation='none')
-			mask = ax1.pcolor(x, y/1000-0.25, hatcharray, cmap = grayhatchescmap,
-				facecolor = 'r', zorder = 5, edgecolor = 'none')
+				interpolation='sinc')
+			mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap, extent=[x_lims[0],
+				x_lims[1], y_lims[0], y_lims[1]], interpolation='none')
 			ax1.xaxis_date() # Initialises date axis
 			date_form = dates.DateFormatter('%H:%M') # Sets date format
 			ax1.xaxis.set_major_formatter(date_form)
