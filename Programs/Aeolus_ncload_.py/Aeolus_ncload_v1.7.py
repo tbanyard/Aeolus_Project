@@ -67,6 +67,19 @@ im_interp = 'sinc'
 # Set oldinterp to True to use the old interpolation routine (nearest)
 oldinterp = False
 
+# Choose vertical resolution
+vert_res = 500 # Given in metres
+
+# Azores or Andes? (Comment in the desired region)
+region = 'andes'
+# ~ region = 'azores'
+if region == 'andes':
+	minlat, maxlat, minlon, maxlon = -80, -40, 280, 320
+	bmlowlat, bmupperlat, bmleftlon, bmrightlon = -80, -40, -80, -40
+elif region == 'azores':
+	minlat, maxlat, minlon, maxlon = 25, 50, 300, 340
+	bmlowlat, bmupperlat, bmleftlon, bmrightlon = 10, 70, -80, 0
+	
 # Iterate through files in directory
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -113,8 +126,8 @@ for file in os.listdir(directory):
 	np.set_printoptions(threshold=sys.maxsize)
 	# ~ print(np.where(data_lat<-80, 0, (np.where(data_lat>-40, 0, 1))))
 	# Find where the satellite is within the Andes box
-	box = np.where(data_lat<-80, 0, (np.where(data_lat>-40, 0,
-		(np.where(data_lon>320, 0, (np.where(data_lon<280, 0, 1)))))))
+	box = np.where(data_lat<minlat, 0, (np.where(data_lat>maxlat, 0,
+		(np.where(data_lon>maxlon, 0, (np.where(data_lon<minlon, 0, 1)))))))
 	diffs = np.diff(box) # Array of diffs for box
 	# Grouping the differences between the elements in diffs
 	# (2nd derivative)
@@ -133,7 +146,7 @@ for file in os.listdir(directory):
 			itrn += u[1]
 		elif u[0] == 0:
 			# Is this section the Andes box?
-			if data_lat[itrn] < -40 and data_lat[itrn] > -80 and \
+			if data_lat[itrn] < maxlat and data_lat[itrn] > minlat and \
 			box[itrn] == 1:
 				# Are there enough profiles in the box?
 				if u[1] > mnopib:
@@ -163,7 +176,9 @@ for file in os.listdir(directory):
 		"""=========================================================="""
 
 		# Initialise meshgrids for x, y and z
-		alts = np.linspace(0,20000, 21)
+		maxheight = 20000
+		levnum = (maxheight / vert_res) + 1
+		alts = np.linspace(0,maxheight, levnum)
 		# ~ #Lists
 		# ~ z = [[0 for _ in range(len(RG))] for _ in range(len(alts))]
 		# ~ z_itrn = \
@@ -295,7 +310,9 @@ for file in os.listdir(directory):
 			x_lims = [np.ndarray.flatten(x)[0], np.ndarray.flatten(x)[-1]]
 			x_lims = dates.date2num(x_lims)
 			# Y limits
-			y_lims = [20.5, -0.5]
+			y_lim_max = (maxheight + (vert_res/2)) / 1000
+			y_lim_min = (0 - (vert_res/2)) / 1000
+			y_lims = [y_lim_max, y_lim_min]
 			fixnanswithmean(z) # Uses my own function 'fixnanswithmean'	
 			
 			# Test using Gaussian noise
@@ -305,8 +322,15 @@ for file in os.listdir(directory):
 			
 			# ~ z = ndimage.uniform_filter(z, size=(3,7), mode = 'reflect')
 			z1 = np.copy(z)
-			z2 = savgol_filter(z, 15, 2, axis = 0) # Vertical S-G filter
-			z3 = savgol_filter(z, 5, 2, axis = 0)
+			# Calculate appropriate upper and lower bounds to band-pass
+			sg_upper = int(np.ceil(15 * (1000/vert_res)))
+			sg_upper += (1-(sg_upper % 2))
+			sg_lower = int(np.floor(5 * (1000/vert_res)))
+			sg_lower += (1-(sg_lower % 2))
+			print(sg_upper * vert_res, "m upper bound")
+			print(sg_lower * vert_res, "m lower bound")
+			z2 = savgol_filter(z, sg_upper, 2, axis = 0) # + Vertical S-G filter
+			z3 = savgol_filter(z, sg_lower, 2, axis = 0) # - Vertical S-G filter
 			# ~ z2 = savgol_filter(z, 15, 2, axis = 1) # Horizontal S-G filter
 			z = z3 - z2
 			# ~ z = z1 - z2
@@ -346,13 +370,19 @@ for file in os.listdir(directory):
 		ax2 = plt.subplot2grid((5,5), (0,3), colspan=2, rowspan=4)
 		ax2.yaxis.set_label_position("right")
 		ax2.yaxis.tick_right()
-		map = Basemap(projection='cyl',llcrnrlat=-80,urcrnrlat=-40,\
-					llcrnrlon=-80,urcrnrlon=-40,resolution='i', ax=ax2)
+		map = Basemap(projection='cyl',llcrnrlat=bmlowlat,urcrnrlat=bmupperlat,\
+					llcrnrlon=bmleftlon,urcrnrlon=bmrightlon,resolution='i', ax=ax2)
+		# ~ map = Basemap(projection='cyl',llcrnrlat=-80,urcrnrlat=-40,\
+					# ~ llcrnrlon=-80,urcrnrlon=-40,resolution='i', ax=ax2)
 		map.fillcontinents(color='#ffdd99', lake_color='#cceeff')
 		map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
 		map.drawcoastlines(linewidth=0.25, color='#666666')
-		map.drawmeridians([-70, -60, -50], linewidth=0.3)
-		map.drawparallels([-70, -60, -50], linewidth=0.3)
+		if region == 'andes':
+			map.drawmeridians([-70, -60, -50], linewidth=0.3)
+			map.drawparallels([-70, -60, -50], linewidth=0.3)
+		elif region == 'azores':
+			map.drawmeridians([-60, -40, -20], linewidth=0.3)
+			map.drawparallels([20, 30, 40, 50, 60], linewidth=0.3)
 		map.scatter(data_lon_new - 360, data_lat_new, marker = 'x', color = 'red',
 			s=0.3, zorder=2)
 		map.plot(data_lon_new - 360, data_lat_new, color = 'red', linewidth = '0.5')
@@ -398,8 +428,12 @@ for file in os.listdir(directory):
 		# ~ map.plot([-70, -65], [-70, -67], color='k')
 
 		# Fix axes
-		ax2.set_xticks([-80, -70, -60, -50, -40])
-		ax2.set_yticks([-80, -70, -60, -50, -40])
+		if region == 'andes':
+			ax2.set_xticks([-80, -70, -60, -50, -40])
+			ax2.set_yticks([-80, -70, -60, -50, -40])
+		elif region == 'azores':
+			ax2.set_xticks([-80, -60, -40, -20, 0])
+			ax2.set_yticks([10, 20, 30, 40, 50, 60, 70])
 		ax2.set_xlabel('Longitude / deg')
 		ax2.set_ylabel('Latitude / deg')
 		ax2.set_aspect('auto') # Stretch map to fill subplot
