@@ -9,6 +9,7 @@ Testbed
 ----------Solved issue with the time formatting and overlapping times.--
 ---v1.3---Complete 40-80 Andes box.-------------------------------------
 ---v1.4---Satellite track subplot.--------------------------------------
+---v2.0---23.03.20-Updates: Applying S-G Filtering----------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -30,6 +31,8 @@ import errno
 from datetime import timedelta, datetime
 import time
 from scipy.interpolate import griddata
+from scipy.signal import savgol_filter
+import scipy.ndimage as ndimage
 from itertools import groupby
 from mpl_toolkits.basemap import Basemap
 
@@ -253,9 +256,16 @@ for day in range(len(dtdates)):
 			# Y limits
 			y_lims = [101, 19]
 			fixnanswithmean(z) # Uses my own function 'fixnanswithmean'
+			
+			z = ndimage.uniform_filter(z, size=(3,7), mode = 'reflect')
+			z1 = np.copy(z)
+			z2 = savgol_filter(z, 15, 2, axis = 0) # Vertical S-G filter
+			# ~ z2 = savgol_filter(z2, 5, 2, axis = 1) # Vertical S-G filter
+			z = z1-z2
+			
 			# Plots using imshow
-			cs = plt.imshow(z, aspect='auto', cmap='plasma', extent=[x_lims[0],
-				x_lims[1], y_lims[0], y_lims[1]], vmin=160, vmax=300,
+			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
+				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
 				interpolation=im_interp)
 			if xaxis_type == 'time':
 				ax1.xaxis_date() # Initialises date axis
@@ -342,7 +352,7 @@ for day in range(len(dtdates)):
 		fig.subplots_adjust(bottom=0.2, right=0.88, left=0.12)
 		cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.05])
 		fig.colorbar(cs, cmap='plasma', orientation='horizontal',
-			label='Kinetic Temperature / K', cax=cbar_ax)		
+			label='Kinetic Temperature Perturbation / K', cax=cbar_ax)		
 		
 		# Set figure title
 		str_plt_title = 'SABER Kinetic Temperature Profiles'

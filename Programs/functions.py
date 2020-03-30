@@ -621,5 +621,23 @@ def createAeolusQCnc(dbl, outfile):
 	print("Created file of type: ", root.data_model)
 	root.close()
 
+def griddatainterpolation(points, values, alts):
+	# ~ print("points: ", points)
+	# ~ print("values: ", values)
+	# ~ print("alts :", alts)
+	if len(points) != len(values) or len(points) < 2:
+		result = np.zeros(len(alts))
+		return result
+		
+	# Sort data for spline interpolation
+	unsorted_data = sorted(zip(points, values))
+	sorted_data = list(zip(*unsorted_data))
+	points = np.array(sorted_data[0])
+	values = np.array(sorted_data[1])
+	
+	# Run interpolation
+	result = griddata(points, values, alts, method='linear')
+	return result
+
 def ncload():
 	return
