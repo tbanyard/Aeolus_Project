@@ -358,11 +358,15 @@ def load_rayleigh_data(dbl):
 	rayleigh_longitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/longitude_cog')
 	rayleigh_altitude = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/altitude_vcog')
 	rayleigh_date_time = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/datetime_cog')
+	rayleigh_azimuth = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/los_azimuth')
+	rayleigh_satellite_velocity = coda.fetch(pf, 'rayleigh_geolocation', -1, 'windresult_geolocation/los_satellite_velocity')
 	mie_wind_velocity = coda.fetch(pf, 'mie_hloswind', -1, 'windresult/mie_wind_velocity')
 	mie_latitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/latitude_cog')
 	mie_longitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/longitude_cog')
 	mie_altitude = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/altitude_vcog')
 	mie_date_time = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/datetime_cog')
+	mie_azimuth = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/los_azimuth')
+	mie_satellite_velocity = coda.fetch(pf, 'mie_geolocation', -1, 'windresult_geolocation/los_satellite_velocity')
 	
 	# Mie and Rayleigh Grouping
 	Mie_Grouping = coda.fetch(pf, 'mie_grouping')
@@ -375,10 +379,11 @@ def load_rayleigh_data(dbl):
 	Rayleigh_HLOS_Wind = coda.fetch(pf, 'rayleigh_hloswind')
 	
 	return rayleigh_wind_velocity, rayleigh_latitude, rayleigh_longitude, \
-	rayleigh_altitude, rayleigh_date_time, mie_wind_velocity, mie_latitude, \
-	mie_longitude, mie_altitude, mie_date_time, Mie_Grouping, Rayleigh_Grouping, \
-	Mie_Wind_Prod_Conf_Data, Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, \
-	Rayleigh_HLOS_Wind
+	rayleigh_altitude, rayleigh_date_time, rayleigh_azimuth, \
+	rayleigh_satellite_velocity, mie_wind_velocity, mie_latitude, mie_longitude, \
+	mie_altitude, mie_date_time, mie_azimuth, mie_satellite_velocity, \
+	Mie_Grouping, Rayleigh_Grouping, Mie_Wind_Prod_Conf_Data, \
+	Rayleigh_Wind_Prod_Conf_Data, Mie_HLOS_Wind, Rayleigh_HLOS_Wind
 	
 
 def createAeolusnc(dbl, outfile):	
@@ -389,9 +394,9 @@ def createAeolusnc(dbl, outfile):
 	rayleigh_lat = data[1]
 	rayleigh_lon = data[2]
 	rayleigh_wind = data[0]
-	rayleigh_grouping = data[11]
-	Rayleigh_Wind_Prod_Conf_Data = data[13]
-	Rayleigh_HLOS_Wind = data[15]
+	rayleigh_grouping = data[15]
+	Rayleigh_Wind_Prod_Conf_Data = data[17]
+	Rayleigh_HLOS_Wind = data[19]
 	L2B_Rayleigh_Hlos_Error_Estimate = []
 	observation_type = []
 	rayleigh_wind_QC = []
@@ -491,15 +496,21 @@ def createAeolusQCnc(dbl, outfile):
 	rayleigh_lat = data[1]
 	rayleigh_lon = data[2]
 	rayleigh_wind = data[0]
-	rayleigh_grouping = data[11]
-	Rayleigh_Wind_Prod_Conf_Data = data[13]
-	Rayleigh_HLOS_Wind = data[15]
+	rayleigh_azimuth = data[5]
+	rayleigh_satellite_velocity = data[6]
+	rayleigh_grouping = data[15]
+	Rayleigh_Wind_Prod_Conf_Data = data[17]
+	Rayleigh_HLOS_Wind = data[19]
 	L2B_Rayleigh_Hlos_Error_Estimate = []
 	observation_type = []
 	rayleigh_wind_QC = []
 	qcflag_both = []
 	qcflag_hloserr = []
 	qcflag_obstype = []
+	
+	# Zonal and Meridional projections of HLOS wind
+	rayleigh_u_proj = - rayleigh_wind * np.sin(rayleigh_azimuth)
+	rayleigh_v_proj = - rayleigh_wind * np.cos(rayleigh_azimuth)
 	
 	# L2B_Rayleigh_Hlos_Error_Estimate and observation_type
 	for i in range(len(Rayleigh_Wind_Prod_Conf_Data)):
@@ -585,6 +596,27 @@ def createAeolusQCnc(dbl, outfile):
 	var_wind.long_name = "Rayleigh_Horizontal_Line_of_Sight_Wind_speed"
 	var_wind.units = "cm s-1"
 	
+	var_azimuth = root.createVariable("LOS_azimuth", "f8", ("time",))
+	var_azimuth.standard_name = "los_azimuth"
+	var_azimuth.long_name = "Line of sight azimuth angle of the target-to-satellite pointing vector"
+	var_azimuth.notes = "Measured in degrees from north"
+	var_azimuth.units = "deg"
+	
+	var_u_proj = root.createVariable("Zonal_wind_projection", "f8", ("time",))
+	var_u_proj.standard_name = "zonal_wind_projection"
+	var_u_proj.long_name = "Zonal projection of the HLOS wind"
+	var_u_proj.units = "cm s-1"
+	
+	var_v_proj = root.createVariable("Meridional_wind_projection", "f8", ("time",))
+	var_v_proj.standard_name = "meridional_wind_projection"
+	var_v_proj.long_name = "Meridional projection of the HLOS wind"
+	var_v_proj.units = "cm s-1"
+	
+	var_sat_vel = root.createVariable("Satellite_Velocity", "f8", ("time",))
+	var_sat_vel.standard_name = "satellite_velocity"
+	var_sat_vel.long_name = "Line of sight velocity of the satellite"
+	var_sat_vel.units = "m s-1"
+	
 	var_QCflag_both = root.createVariable("QC_Flag_Both", "f8", ("time",))
 	var_QCflag_both.standard_name = "qc_flag_both"
 	var_QCflag_both.long_name = "Binary flag corresponding to both QC filters"
@@ -616,10 +648,11 @@ def createAeolusQCnc(dbl, outfile):
 	var_RG.long_name = "Rayleigh_Grouping"
 	var_RG.units = "unitless"
 	
-	var_time[:], var_lon[:], var_lat[:], var_alt[:], var_wind[:], var_QCflag_both[:],  \
-	var_QCflag_obstype[:],  var_QCflag_hloserr[:], var_RG[:] = rayleigh_time, \
-	rayleigh_lon, rayleigh_lat, rayleigh_alt, rayleigh_wind, qcflag_both, \
-	qcflag_obstype, qcflag_hloserr, RG
+	var_time[:], var_lon[:], var_lat[:], var_alt[:], var_wind[:], var_azimuth[:], \
+	var_u_proj[:], var_v_proj[:],	var_sat_vel[:], var_QCflag_both[:],	var_QCflag_obstype[:],  \
+	var_QCflag_hloserr[:], var_RG[:] = rayleigh_time, rayleigh_lon, rayleigh_lat, \
+	rayleigh_alt, rayleigh_wind, rayleigh_azimuth, rayleigh_u_proj, rayleigh_v_proj, \
+	rayleigh_satellite_velocity, qcflag_both, qcflag_obstype, qcflag_hloserr, RG
 	
 	print("Created file of type: ", root.data_model)
 	root.close()

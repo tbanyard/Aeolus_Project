@@ -28,7 +28,7 @@ import sys
 # ~ sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
 # ~ sys.path.append('/home/a/tpb38/scratch/Aeolus/')
 sys.path.append('/media/NS/AEOLUS/')
-from functions2 import createAeolusncold, load_rayleigh_data
+from functions import *
 
 # Change current working directory to parent directory
 # ~ os.chdir('..')
@@ -44,7 +44,7 @@ def eachmonth(MM):
 	# ~ dbl_dir = 'DATA2/' #BALENA: 'DBL/' #UBPC-2027 'DBL/'
 	dbl_dir = 'DBL/'
 	# NetCDF file save directory
-	nc_dir = 'NC/'
+	nc_dir = 'NC_FullQC/'
 
 	# Year
 	YYYY = 2020
@@ -60,7 +60,7 @@ def eachmonth(MM):
 	strdirectory = parent + dbl_dir + datetag
 	directory = os.fsencode(strdirectory)
 	
-	# ~ time.sleep(43000)
+	time.sleep(43000)
 	
 	# Loop through directory
 	for file in os.listdir(directory):
@@ -98,7 +98,7 @@ def eachmonth(MM):
 		sub = nc_dir + ncfilename
 		outfile = parent + sub
 		print(outfile)
-		createAeolusncold(dbl, outfile)
+		createAeolusQCnc(dbl, outfile)
 		
 		# Time taken for the entire program
 		fduration = datetime.now() - fstartTime
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 	"""Enables program to be executed using multiple processes/cores"""
 	startTime = datetime.now()
 	processes = []
-	for MM in range(2,3):
+	for MM in range(1,4):
 		p = multiprocessing.Process(target=eachmonth, args=(MM,))
 		processes.append(p)
 		p.start()
