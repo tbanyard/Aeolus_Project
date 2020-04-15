@@ -509,8 +509,8 @@ def createAeolusQCnc(dbl, outfile):
 	qcflag_obstype = []
 	
 	# Zonal and Meridional projections of HLOS wind
-	rayleigh_u_proj = - rayleigh_wind * np.sin(rayleigh_azimuth)
-	rayleigh_v_proj = - rayleigh_wind * np.cos(rayleigh_azimuth)
+	rayleigh_u_proj = - rayleigh_wind * np.sin(rayleigh_azimuth * (np.pi/180))
+	rayleigh_v_proj = - rayleigh_wind * np.cos(rayleigh_azimuth * (np.pi/180))
 	
 	# L2B_Rayleigh_Hlos_Error_Estimate and observation_type
 	for i in range(len(Rayleigh_Wind_Prod_Conf_Data)):
@@ -563,11 +563,12 @@ def createAeolusQCnc(dbl, outfile):
 	
 	# Creating netCDF file
 	root = nc.Dataset(outfile, 'w', format = "NETCDF4")
+	root.title = "Aeolus HLOS Rayleigh Wind Data"
 	root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
 	root.institution = \
 	"University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
-	root.title = "Aeolus HLOS Rayleigh Wind Data"
 	root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
+	root.Date_of_creation = "02 Apr 2020"
 	dim_time = root.createDimension("time", len(rayleigh_time))
 	dim_RG = root.createDimension("RG", len(RG))
 	

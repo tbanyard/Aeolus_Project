@@ -15,6 +15,7 @@ Aeolus data load from netCDF format
 ---v1.7---Experimenting with 500m bins, with interpolation, different---
 ----------scheme for dealing with NaNs etc.-----------------------------
 ---v1.8---ERA5 interpolated onto Aeolus track---------------------------
+---v1.9---Testing New NC_FullQC files, smoothing ERA5 first (in u and v)
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -59,7 +60,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read Aeolus netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC/'
 """ERA5 directory"""
 ERA5_dir = '/home/tpb38/PhD/Bath/ERA5/'
 
@@ -111,7 +112,10 @@ for file in os.listdir(directory):
 	# Altitude
 	data_alt = data.variables['alt'][:]
 	# Horizontal Line of Sight Wind speed
-	data_HLOS = data.variables['HLOS_wind_speed'][:]
+	data_HLOS = data.variables['Rayleigh_HLOS_wind_speed'][:]
+	# ~ data_HLOS = data.variables['Zonal_wind_projection'][:]
+	# ~ data_HLOS = data.variables['Meridional_wind_projection'][:]
+	# ~ data_HLOS = data.variables['LOS_azimuth'][:]
 	# Rayleigh_Grouping
 	RG = data.variables['RG'][:]
 	# Time
@@ -226,6 +230,17 @@ for file in os.listdir(directory):
 		ERA5_levels = np.loadtxt("ERA5_pressure_levels_labels.txt")
 		# ==============================================================
 		
+		# =====================Smooth u and v fields====================
+		# ~ print(np.shape(ERA5_data_u)
+		ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, 17.5, axis = 1)
+		ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, 0.5, axis = 2)
+		ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, 0.5, axis = 3)
+		ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, 17.5, axis = 1)
+		ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, 0.5, axis = 2)
+		ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, 0.5, axis = 3)
+				
+		# ==============================================================
+				
 		# =======================Run Interpolation======================
 		# Create a datetime format version of rayleigh_times_new
 		ERA5_interpolated = np.empty(0)
@@ -288,10 +303,10 @@ for file in os.listdir(directory):
 			
 			ERA5_interpolated = np.append(ERA5_interpolated, y)
 
-		print(len(ERA5_interpolated))
-		print(len(rayleigh_times_new))
-		# ~ data_HLOS_new = np.copy(ERA5_interpolated)*-100
-		print(data_HLOS_new)
+		# ~ print(len(ERA5_interpolated))
+		# ~ print(len(rayleigh_times_new))
+		data_HLOS_new = np.copy(ERA5_interpolated)*-100
+		# ~ print(data_HLOS_new)
 		"""=========================================================="""
 		"""=================Creating arrays for plot================="""
 		"""=========================================================="""
@@ -456,7 +471,7 @@ for file in os.listdir(directory):
 						
 			# Plots using imshow
 			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
-				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
+				x_lims[1], y_lims[0], y_lims[1]], vmin=-10, vmax=10,
 				interpolation='none')
 			mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap,
 				extent=[x_lims[0], x_lims[1], y_lims[0], y_lims[1]], interpolation=im_interp)
@@ -613,7 +628,7 @@ for file in os.listdir(directory):
 		# Climb out of plot directory
 		os.chdir('..')
 		os.chdir('..')
-		plt.savefig('testme2.png',dpi=300)
+		plt.savefig('testme.png',dpi=300)
 		
 		# Time taken for the file
 		fduration = datetime.now() - fstartTime

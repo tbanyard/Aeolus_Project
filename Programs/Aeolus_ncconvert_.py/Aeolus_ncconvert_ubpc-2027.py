@@ -60,7 +60,7 @@ def eachmonth(MM):
 	strdirectory = parent + dbl_dir + datetag
 	directory = os.fsencode(strdirectory)
 	
-	time.sleep(43000)
+	time.sleep(28000)
 	
 	# Loop through directory
 	for file in os.listdir(directory):
@@ -93,6 +93,10 @@ def eachmonth(MM):
 		
 		# Scan 2B or 2C
 		VV = str(str(filename)[16:18])
+		
+		# Don't do L2C data
+		if VV == "2C":
+			continue
 		
 		ncfilename = 'AE_' + str(VV) + '_' + str(YYYY) + '-' + str(MM) + '-' + str(dd) + '_' + str(HH) + str(mm) + str(ss) + '.nc'
 		sub = nc_dir + ncfilename

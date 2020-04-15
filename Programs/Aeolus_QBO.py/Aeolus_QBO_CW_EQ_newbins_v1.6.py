@@ -54,7 +54,7 @@ os.chdir('..')
 
 # Loading data and printing dimensions
 matfile = '/home/tpb38/PhD/Bath/QBO/aeolus_EQ_newbins.mat'
-matfile = '/home/tpb38/PhD/Bath/QBO/aeolus_EQ_2km_p25rolling.mat'
+matfile = '/home/tpb38/PhD/Bath/QBO/aeolus_EQ_2km_p25rolling_v3_10days.mat'
 matData = loadmat(matfile)['Data']
 matLat = loadmat(matfile)['Lat']
 matLon = loadmat(matfile)['Lon']
@@ -120,9 +120,8 @@ for t in range(len(matTime[0])):
 		z[-1,:] = z[0,:] # Wrap around the dateline
 		strheight = str(alt) + ' $\pm$ 1 km'
 		z = np.transpose(z)/100
-		z = -z
-		print(strheight)
-		print(z)
+		# ~ print(strheight)
+		# ~ print(z)
 		
 		# Set NaNs to mean and create binary array of NaNs.
 		isnanarray = np.isnan(z)
@@ -219,7 +218,7 @@ for t in range(len(matTime[0])):
 	# Find date for title and savename
 	### Title
 	curr_date = dtTime[t].strftime('%d-%b-%Y')
-	next_date = dtTime[t] + timedelta(days=4)
+	next_date = dtTime[t] + timedelta(days=9)
 	next_date = next_date.strftime('%d-%b-%Y')
 	
 	### Savename
@@ -239,6 +238,7 @@ for t in range(len(matTime[0])):
 	plt.savefig(str_fig_name,dpi=300)
 	print(str_fig_name, " saved.")
 	os.chdir('..')
+	plt.close()
 
 sys.exit(0) # Do not continue onto 2D Test Figure? (Toggle on/off)
 	
