@@ -16,6 +16,7 @@ Aeolus data load from netCDF format
 ----------scheme for dealing with NaNs etc.-----------------------------
 ---v1.8---ERA5 interpolated onto Aeolus track---------------------------
 ---v1.9---Testing New NC_FullQC files, smoothing ERA5 first (in u and v)
+---v1.10--Consolidating code and tidying up-----------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -97,12 +98,11 @@ for file in os.listdir(directory):
 	# Setting filename for dataload
 	filename = os.fsdecode(file)
 	print(str(filename), '\n')
-
 	infile = strdirectory + str(filename) # Specifies data file
 	print('netCDF file:')
 	print(infile, '\n')
 	data = nc.Dataset(infile)
-
+	
 	"""=============================================================="""
 	"""======================Download Variables======================"""
 	"""=============================================================="""
@@ -132,6 +132,7 @@ for file in os.listdir(directory):
 	# Converted time
 	# ~ data_time = nc.num2date(data.variables['time'][:],\
 	# ~ calendar = 'standard', units = data.variables['time'].units)
+	data.close()
 
 	"""=============================================================="""
 	"""=====Test to see if orbit is sufficiently within Andes box===="""
@@ -251,14 +252,14 @@ for file in os.listdir(directory):
 		lats = np.deg2rad(np.array([-50,-51.5]))
 		lons = np.deg2rad(np.array([-70,-70]))
 		latdiff = haversine(lats, lons)
-		lat_sig = (3 / latdiff) / 2.355
+		lat_sig = (3 / latdiff) / 2.355 # This is for 3km
 		print("lat_sig: ", lat_sig)
 		
 		# Calculate longitude difference
 		lats = np.deg2rad(np.array([-50,-50]))
 		lons = np.deg2rad(np.array([-70,-71.5]))
 		londiff = haversine(lats, lons)
-		lon_sig = (3 / londiff) / 2.355
+		lon_sig = (3 / londiff) / 2.355 # This is for 3km
 		print("lon_sig: ", lon_sig)
 		
 		ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, lat_sig, axis = 2)
@@ -679,12 +680,12 @@ for file in os.listdir(directory):
 			label='HLOS Rayleigh Wind Speed / ms$^{-1}$', cax=cbar_ax)
 
 		# Set figure title
-		print("Here:", str(filename)[6:-3]) # Here: 2019-08-11_224235
+		print("This file is:", str(filename)[6:-3]) # Here: 2019-08-11_224235
 		strdate = str(filename)[6:16]
-		print("strdate", strdate)
+		print("strdate:", strdate)
 		strtime = str(filename)[17:19] + ':' + str(filename)[19:21] + ':' + \
 			str(filename)[21:23]
-		print(strtime)
+		print("strtime:", strtime)
 		str_plt_title = 'Aeolus Orbit HLOS Rayleigh Wind Cross-section'
 		# ~ str_plt_title = 'ERA5 interpolated onto Aeolus Orbit S-G 5-15km Band Pass'
 		str_plt_title += '\n' + 'Orbit: ' + strdate + ' ' + strtime
