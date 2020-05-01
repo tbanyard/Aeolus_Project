@@ -60,7 +60,7 @@ def eachmonth(MM):
 	strdirectory = parent + dbl_dir + datetag
 	directory = os.fsencode(strdirectory)
 	
-	time.sleep(28000)
+	# time.sleep(28000)
 	
 	# Loop through directory
 	for file in os.listdir(directory):
@@ -112,7 +112,7 @@ if __name__ == '__main__':
 	"""Enables program to be executed using multiple processes/cores"""
 	startTime = datetime.now()
 	processes = []
-	for MM in range(1,4):
+	for MM in range(4,5):
 		p = multiprocessing.Process(target=eachmonth, args=(MM,))
 		processes.append(p)
 		p.start()
