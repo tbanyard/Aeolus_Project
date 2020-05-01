@@ -33,8 +33,10 @@ import matplotlib.dates as dates
 import matplotlib.gridspec as gridspec
 import matplotlib.text as text
 import os
+# os.putenv('CODA_DEFINITION',
+# '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
 os.putenv('CODA_DEFINITION',
-'/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+'/usr/local/share/coda/definitions/AEOLUS-20200227.codadef')
 import coda
 import errno
 from datetime import timedelta, datetime
