@@ -17,7 +17,7 @@ import netCDF4 as nc
 import numpy as np
 import os
 # ~ os.putenv('CODA_DEFINITION', '/home/a/tpb38/scratch/conda-env/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
-os.putenv('CODA_DEFINITION', '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
+os.putenv('CODA_DEFINITION', '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20200227.codadef')
 import errno
 import multiprocessing
 from datetime import timedelta, datetime
