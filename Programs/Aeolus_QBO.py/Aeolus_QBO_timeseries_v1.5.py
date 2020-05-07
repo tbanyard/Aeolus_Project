@@ -53,7 +53,7 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'timdata3.nc' # Specifies data file
+infile = strdirectory + 'timdatamarQCdDesc2.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -78,7 +78,7 @@ calendar = 'standard', units = data.variables['time'].units)
 alts = data_alt
 # ~ print("Alts: ", alts)
 # ~ print("Shape of Alts: ", np.shape(alts))
-time = date_time[140:]
+time = date_time[140:] # Change to [140::7] to see what one day per week is like
 # ~ print("Time: ", time)
 # ~ print("Shape of Time: ", np.shape(time))
 z = data_u_proj[:,140:]
@@ -119,7 +119,6 @@ x_lims = [np.ndarray.flatten(x)[0], np.ndarray.flatten(x)[-1]]
 y_lim_max = 30.5
 y_lim_min = -0.5
 y_lims = [y_lim_max, y_lim_min]
-
 
 # Set NaNs to mean and create binary array of NaNs.
 isnanarray = np.isnan(z)
@@ -193,7 +192,7 @@ elif imshow == False:
 		cls2 = ax1.clabel(cs5, [0], fmt = '%i', fontsize=4, inline_spacing=1)
 		
 
-mask = plt.contourf(x, y/1000, hatcharray, cmap = whitehatchescmap, zorder = 10)
+mask = plt.contourf(x, y/1000, hatcharray, cmap = whitehatchescmap, zorder = 10, levels=1)
 mask = plt.contour(x, y/1000, hatcharray, linestyles = 'dashed', linewidths = 1.0, cmap = grayhatchescmap, zorder = 10, levels=1)
 # ~ mask = ax1.pcolor(x, y/1000, hatcharray, cmap = grayhatchescmap, facecolor = 'r', edgecolor = 'none')
 

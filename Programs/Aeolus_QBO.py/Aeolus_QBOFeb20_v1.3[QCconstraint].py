@@ -7,7 +7,7 @@ Aeolus data load from netCDF format for QBO test
 ---v1.1---Ascending/Descending Node Split-------------------------------
 ---v1.2---Daily_Means and creating .mat file for Neil-------------------
 ---v1.3---Plotting my own version of this plot extended out to March----
-----------[orbitconstraint]---Applying restricting to N orbits per day--
+----------[QCconstraint]---Applying both Quality Controls---------------
 ----------[BRANCH]-This_is_a_working_branch_version_of_this_file--------
 ------------------------------------------------------------------------
 ========================================================================
@@ -58,8 +58,6 @@ for file in sorted(os.listdir(directory)):
 	if daynum != orbitdaynum:
 		day_itrn += 1
 		daynum = orbitdaynum
-		
-day_itrn -= 2 # Dealing with the constraint
 
 # Initialise meshgrids for x, y and z
 alts = np.linspace(0,30000, 31)
@@ -95,18 +93,6 @@ for file in sorted(os.listdir(directory)):
 	filename = os.fsdecode(file)
 	print(str(filename), '\n')
 
-	# Constraining to two orbits per day
-	strfilenm = str(filename)
-	strdatenm = strfilenm[6:16]
-	print("strfilenm: ", strfilenm[6:16])
-	if strdatenm == tempdate:
-		orbitconstrainer += 1
-	else:
-		orbitconstrainer = 0
-	if orbitconstrainer > 10:
-		continue
-	tempdate = strdatenm
-
 	infile = strdirectory + str(filename) # Specifies data file
 	print('netCDF file:')
 	print(infile, '\n')
@@ -127,6 +113,8 @@ for file in sorted(os.listdir(directory)):
 	data_u_proj = data.variables['Zonal_wind_projection'][:]
 	# Time
 	rayleigh_times = data.variables['time'][:]
+	# QC_Flag_Both
+	data_qc_both = data.variables['QC_Flag_Both'][:]
 	
 	"""=============================================================="""
 	"""======Test to see where orbit is within Equatorial band======="""
@@ -135,6 +123,8 @@ for file in sorted(os.listdir(directory)):
 	np.set_printoptions(threshold=sys.maxsize)
 	# Find where the satellite is within the equatorial band
 	lat_band = np.where(data_lat<-5, 0, (np.where(data_lat>5, 0, 1)))
+	# Find where the data passes both QC criteria
+	QC_good = np.where(data_qc_both == 1, 0, 1)
 	
 	for t in range(len(rayleigh_times)):
 		now = coda.time_to_utcstring(rayleigh_times[t])
@@ -159,42 +149,45 @@ for file in sorted(os.listdir(directory)):
 				daynum = now_day # Set the day number to be the current day
 				monthnum = now_month # Set the month number to be the current month
 				daydt = nowstrp
-			
-		# Is element within equatorial band?
-		if lat_band[t] == 1:
-			
-			# Find the nearest altitude level
-			val = find_nearest(alts, data_alt[t])
-			alt_elmnt = np.where(alts == val)[0][0]
-			
-			# Cap wind speeds to 250 m/s
-			if np.abs(data_u_proj[t]) < 250000:
+		
+		# Does element pass both quality controls	
+		if QC_good[t] == 0:
+		
+			# Is element within equatorial band?
+			if lat_band[t] == 1:
 				
-				if currnext == 0:
-					y1[alt_elmnt] += data_u_proj[t]
-					y1_itrn[alt_elmnt] += 1
+				# Find the nearest altitude level
+				val = find_nearest(alts, data_alt[t])
+				alt_elmnt = np.where(alts == val)[0][0]
 				
-				elif currnext == 1:
-					y2[alt_elmnt] += data_u_proj[t]
-					y2_itrn[alt_elmnt] += 1
-				
-				# Ascending or Descending node?	
-				"""try:
-					data_lat[t+50]
-				except:
-					delta_lat = data_lat[t] - data_lat[t-50]
-				else:
-					delta_lat = data_lat[t+50] - data_lat[t]
-									
-				if delta_lat > 0:
-					node = 1 # Ascending node
-				elif delta_lat < 0:
-					node = -1 # Descending node
-				
-				# Add data to orbit array
-				if node == 1 or node == -1:
-					y[alt_elmnt] += data_HLOS[t] * node
-					y_itrn[alt_elmnt] += 1"""
+				# Cap wind speeds to 250 m/s
+				if np.abs(data_u_proj[t]) < 250000:
+					
+					if currnext == 0:
+						y1[alt_elmnt] += data_u_proj[t]
+						y1_itrn[alt_elmnt] += 1
+					
+					elif currnext == 1:
+						y2[alt_elmnt] += data_u_proj[t]
+						y2_itrn[alt_elmnt] += 1
+					
+					# Ascending or Descending node?	
+					"""try:
+						data_lat[t+50]
+					except:
+						delta_lat = data_lat[t] - data_lat[t-50]
+					else:
+						delta_lat = data_lat[t+50] - data_lat[t]
+										
+					if delta_lat > 0:
+						node = 1 # Ascending node
+					elif delta_lat < 0:
+						node = -1 # Descending node
+					
+					# Add data to orbit array
+					if node == 1 or node == -1:
+						y[alt_elmnt] += data_HLOS[t] * node
+						y_itrn[alt_elmnt] += 1"""
 		
 	# Proceed with daily mean calculation?
 	if currnext == 0:
@@ -248,7 +241,7 @@ print("Shape of z: ", np.shape(z))
 # Creating netCDF file
 
 
-root = nc.Dataset('timdatamar10o.nc', 'w', format = "NETCDF4")
+root = nc.Dataset('timdatamarQCd2.nc', 'w', format = "NETCDF4")
 root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
 root.institution = \
 "University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
