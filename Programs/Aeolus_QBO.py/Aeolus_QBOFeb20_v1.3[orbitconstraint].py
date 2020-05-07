@@ -75,6 +75,8 @@ y1_itrn = np.zeros(len(alts))
 y2 = np.zeros(len(alts))
 y2_itrn = np.zeros(len(alts))
 orbittrigger = 0
+orbitconstrainer = 0
+tempdate = '2019-01-01'
 
 # Generate time_units string for .nc file using datetime.datetime array
 time_units = "hours since " + "1900-01-01" + " 00:00:00"
@@ -89,6 +91,19 @@ for file in sorted(os.listdir(directory)):
 	# Setting filename for dataload
 	filename = os.fsdecode(file)
 	print(str(filename), '\n')
+
+	# Constraining to two orbits per day
+	strfilenm = str(filename)
+	strdatenm = strfilenm[6:16]
+	print("strfilenm: ", strfilenm[6:16])
+	if strdatenm == tempdate:
+		orbitconstrainer += 1
+	else:
+		orbitconstrainer = 0
+	if orbitconstrainer > 3:
+		continue
+	tempdate = strdatenm
+	print("passed here")
 
 	infile = strdirectory + str(filename) # Specifies data file
 	print('netCDF file:')
@@ -229,7 +244,7 @@ print("Shape of z: ", np.shape(z))
 # Creating netCDF file
 
 
-root = nc.Dataset('timdata2.nc', 'w', format = "NETCDF4")
+root = nc.Dataset('timdata4.nc', 'w', format = "NETCDF4")
 root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
 root.institution = \
 "University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
