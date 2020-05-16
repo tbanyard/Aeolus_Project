@@ -1,0 +1,15 @@
+# Here is a list of python modules that are implicitly loaded at the beginning of each script I run.
+import os
+import sys
+import errno
+import time
+import netCDF4 as nc
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import timedelta, datetime
+
+# System specific imports. Please alter this accordingly.
+fdirectory = "/" # Please insert the directory containing phdfunctions and functions here.
+sys.path.append(fdirectory)
+from phdfunctions import *
+from functions import *
