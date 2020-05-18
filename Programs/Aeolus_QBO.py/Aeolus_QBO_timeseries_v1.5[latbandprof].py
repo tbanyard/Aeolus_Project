@@ -53,7 +53,7 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'timlatband.nc' # Specifies data file
+infile = strdirectory + 'timdatamar.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -78,34 +78,54 @@ calendar = 'standard', units = data.variables['time'].units)
 alts = data_alt
 # ~ print("Alts: ", alts)
 # ~ print("Shape of Alts: ", np.shape(alts))
-time = date_time[140:] # Change to [140::7] to see what one day per week is like
-# ~ print("Time: ", time)
-# ~ print("Shape of Time: ", np.shape(time))
-z = data_u_proj[:,140:]
-# ~ print("z: ", z)
-# ~ print("Shape of z: ", np.shape(z))
 
-# ~ date_time = np.array([dates.date2num(date) for date in date_time])
+print("Shape of Time: ", np.shape(date_time))
 
-print(datetime.strftime(date_time[140], '%Y-%m-%d %H:%M:%S.%f'))
+listofits = np.linspace(190, 400, 11, dtype=int)
+print(listofits)
 
-# These two commands take the real_datetime, convert to string, and then back to datetime.datetime
-date_time = np.array([datetime.strftime(date,
-			'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
-date_time = np.array([datetime.strptime(date,
-			'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
-# The above code is not needed, but is a nice trick to convert from
-# real_datetime to datetime.datetime
-			
-date_time = np.array([dates.date2num(date) for date in date_time])
-date_time = date_time[140:]
-
-np.set_printoptions(threshold=sys.maxsize)
-
-x, y = np.meshgrid(date_time, alts)
-
+new_date_time = np.copy(date_time)
 fig = plt.figure()
 ax1 = fig.add_subplot(111)
+hexes = ['#000000', '#000d33', '#001a66', '#002699', '#0033cc', '#0040ff', '#3366ff', '#668cff', '#99b3ff', '#ccd9ff', '#e6ecff']
+it = 0
+
+for x in listofits:
+	date_time = np.copy(new_date_time)
+	time = np.copy(new_date_time[x:x+1]) # Change to [140::7] to see what one day per week is like
+	# ~ print("Time: ", time)
+	print("Shape of Time: ", np.shape(time))
+	z = data_u_proj[:,x:x+1]
+	# ~ print("z: ", z)
+	# ~ print("Shape of z: ", np.shape(z))
+
+	# ~ date_time = np.array([dates.date2num(date) for date in date_time])
+
+	print(datetime.strftime(date_time[x], '%Y-%m-%d %H:%M:%S.%f'))
+	thislabel = datetime.strftime(date_time[x], '%Y-%m-%d %H:%M:%S.%f')
+
+	# These two commands take the real_datetime, convert to string, and then back to datetime.datetime
+	date_time = np.array([datetime.strftime(date,
+				'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
+	date_time = np.array([datetime.strptime(date,
+				'%Y-%m-%d %H:%M:%S.%f') for date in date_time])
+	# The above code is not needed, but is a nice trick to convert from
+	# real_datetime to datetime.datetime
+				
+	date_time = np.array([dates.date2num(date) for date in date_time])
+	date_time = date_time[x:x+1]
+	
+	print(it)
+	plt.plot(z, alts/1000, hexes[it], label = thislabel[0:10])
+	it +=1
+print(os.getcwd())
+plt.legend()
+ax1.set_ylabel('Altitude / km')
+ax1.set_yticks(np.arange(26))
+ax1.set_xlabel('U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$')
+plt.title('Vertical U-wind profiles from Aeolus')
+plt.savefig("testieee.png", dpi=300)
+sys.exit(0) # Do not continue onto 2D Test Figure? (Toggle on/off)
 
 #===========
 
@@ -240,7 +260,7 @@ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'file810_2.png'
+pngsavename = 'file810_1.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")
