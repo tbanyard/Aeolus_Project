@@ -54,39 +54,13 @@ print(dirs['Programs']) # Generalise as much as possible!! Multiple .nc files???
 print(dirs['Plots']) # Note, when Plots is created, I can use the exceptions.
 print(dirs['ncdir'])
 
-@delayed(pure=True)
-def add(a, b):
-    for t in range(20000000):
-        y = t + 4
-    return a + b
+# Find and read netCDF data
+ds = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
+    combine = 'nested', concat_dim = 'time')
     
-@delayed(pure=True)
-def inc(a):
-    for t in range(20000000):
-        y = t + 4
-    return a + 1
-    
-x1 = inc(2)
-y1 = inc(1)
-z1 = add(x1, y1)
-x2 = inc(3)
-y2 = inc(4)
-z2 = add(x2, y2)
-a = add(z1, z2)
-a.visualize(filename='daskgraph.png')
-one = a + a
-two = a * a
-three = a + a
-four = a * a
-five = one + two + three + four
-five.compute()
-with ProgressBar():
-    a.compute()
+# Create plot array (z) with a size matching start and end dates of data
+print((ds.time.values[-1]-ds.time.values[0]).days)
 
-with ProgressBar():
-    print(x1.compute())
-
-# time.sleep(1000)
 
 # Find and read netCDF data
 ds = xr.open_mfdataset(dirs['Programs'] + '/timdatamarQCdDesc2.nc', 
@@ -95,8 +69,20 @@ ds2 = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
     combine = 'nested', concat_dim = 'time')
 
 print(ds2.nbytes/1e6)
+print(ds2.data_vars['lat'].nbytes)
 print(pstartTime)
-print(ds.data_vars)
+print(ds2.data_vars)
+
+print('------')
+
+data_lat = ds2.data_vars['lat'][:]
+print(data_lat)
+lat_band = xr.where(data_lat<-5, 0, (xr.where(data_lat>5, 0, 1)))
+print(lat_band)
+
+
+
+time.sleep(100000)
 
 ds.data_vars['Zonal_wind_projection'][:,1:].plot()
 plt.savefig('test0123.png', dpi=600)
@@ -126,6 +112,9 @@ ds9 = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
 ds10 = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
     combine = 'nested', concat_dim = 'time')
     
-
-
+    
 # tpbcmaps
+
+# Time taken for the program
+pduration = datetime.now() - pstartTime
+print('That program took ', pduration, ' seconds')
