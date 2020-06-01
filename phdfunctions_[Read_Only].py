@@ -169,12 +169,16 @@ def deltatime(first, last, freq = 'days'):
     
     # Combining as OR statement
     conditions = {
-        "condA": not False in conditionsB.values(),
-        "condB": not False in conditionsA.values()
+        "condA": True in conditionsA.values(),
+        "condB": True in conditionsB.values()
         }
+        
+    """print("conditionsA: ", conditionsA)
+    print("conditionsB: ", conditionsB)
+    print("conditions: ", conditions)"""
     
     # Raise error for invalid type
-    if not True in conditions.values():
+    if False in conditions.values():
         raise TypeError('One or both of the input times is of an invalid type')
     
     # Testing that the input times are of the same type

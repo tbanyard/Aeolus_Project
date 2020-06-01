@@ -59,7 +59,97 @@ ds = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
     combine = 'nested', concat_dim = 'time')
     
 # Create plot array (z) with a size matching start and end dates of data
-print((ds.time.values[-1]-ds.time.values[0]).days)
+### deltatime::phdfunctions
+day_pop = deltatime(ds.time.values[0], ds.time.values[-1], 'days')
+alts = np.linspace(0,30000, 31)
+z = np.zeros((len(alts), day_pop+1))
+
+# Create a function which places data variables into a dictionary
+### data_dict::phdfunctions
+data = {
+    'data_lat': ds.data_vars['lat'][:],
+    'data_lon': ds.data_vars['lon'][:],
+    'data_alt': ds.data_vars['alt'][:],
+    'data_u_proj': ds.data_vars['Zonal_wind_projection'][:],
+    }
+
+# data_lat = ds.data_vars['lat'][:]
+# data_lon = ds.data_vars['lon'][:]
+lat_band = xr.where(data['data_lat']<-5, 0, (xr.where(data['data_lat']>5, 0, 1)))
+
+####### READ THIS TOMORROW #######
+# Below I cap u_proj using xr.where
+data['data_u_proj_capped'] = xr.where(data['data_u_proj']>250000, 0, (data['data_u_proj']))
+
+# Now I use groupby to group by the day, test2 simply gives the mean for all alts.
+test = data['data_u_proj_capped'].groupby("time.day")
+test2 = data['data_u_proj_capped'].groupby("time.day").mean()
+print(test2.values)
+print("==/1/==")
+
+# returns an array pointing to the bin that each value is in
+def altgroup(x):
+    binplace = np.digitize(x, alts)
+    return binplace
+
+# groupby which applies the altgroup
+test3 = data['data_alt'].groupby("time.day").apply(altgroup)
+print(test3)
+print("==/2/==")
+
+# Where I need to start next!
+test3b = data['data_alt'].groupby("time.day")
+u_proj = data['data_u_proj_capped'].groupby("time.day")
+herea = xr.apply_ufunc(da.digitize, test3b, alts, dask='allowed', output_dtypes = [float])
+print("herea: ", np.mean(herea.values))
+print("==/3/==")
+
+@delayed(pure=True, nout=31)
+def digitize(i):
+    return xr.apply_ufunc(da.digitize, i, alts, dask='allowed', output_dtypes = [float])
+
+@delayed(pure=True, nout=31)
+def loop(altplaces, u_proj):
+    for i in altplaces:
+        hereb = digitize(i)
+        print("len(i): ", len(i))
+        for j in range(31):
+            single_alt = xr.where(hereb == j, u_proj, 0)
+            
+
+answeris = loop(test3b, u_proj)
+answeris.compute()
+    
+
+print("==/4/==")
+
+
+time.sleep(100000)
+
+def wrap_digitize(data):
+    return np.digitize(data, alts)
+    
+here = xr.apply_ufunc(wrap_digitize, test3b, dask='parallelized', output_dtypes = [float])
+print(here)
+print("==//==")
+
+
+test4 = data['data_u_proj_capped'].groupby("time.day").apply(altgroup)
+
+@delayed
+def eachday(i):
+    x = np.asarray(i)
+    print(x)
+
+for i in test:
+    intermediate = eachday(i)
+    ans = intermediate.compute
+
+# alts = data['data_u_proj_capped'].isel(alt=i).groupby(
+
+print(data['data_u_proj_capped'])
+
+time.sleep(100000)
 
 
 # Find and read netCDF data
