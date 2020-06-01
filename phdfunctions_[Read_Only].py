@@ -118,11 +118,12 @@ class time_type_switcher(object):
     def switch(self, first, last, time_type, freq):
         func = time_type.get('func_code') + 'func'
         args = [first, last, freq]
-        method = getattr(self, func, lambda: "can't find it")(*args)
+        method = getattr(self, func, lambda: "Invalid switcher input.")(*args)
         return method
 
     def dtdtfunc(self, first, last, freq):
         """datetime.timedelta function"""
+        # N.B. This function is preliminarily deprecated.
         switcher = {
             'weeks': int((last-first).days/7),
             'days': int((last-first).days),
@@ -131,7 +132,7 @@ class time_type_switcher(object):
             'seconds': int((last-first).seconds),
             'microseconds': int((last-first).microseconds)
             }
-        return switcher.get(freq, "morestuff")
+        return switcher.get(freq, lambda: "Invalid deltatime frequency.")
          
     def npdtfunc(self, first, last, freq):
         """numpy.timedelta64 function"""
@@ -146,28 +147,42 @@ class time_type_switcher(object):
             'microseconds': (last-first).astype('timedelta64[us]').astype(int)
             }
         
-        return switcher.get(freq, "evenmorestuff")
+        return switcher.get(freq, lambda: "Invalid deltatime frequency.")
     
 def deltatime(first, last, freq = 'days'):
     """Returns the difference between two times"""
    
     # Conditions for condition statement
-    conditions = {
+    # Checking the first time
+    conditionsA = {
         "cond1": type(first) == 'numpy.datetime64',
-        "cond2": type(last) == 'numpy.datetime64',
-        "cond3": isinstance(first, datetime),
-        "cond4": isinstance(last, datetime),
-        "cond5": isinstance(first, np.datetime64),
+        "cond2": isinstance(first, datetime),
+        "cond3": isinstance(first, np.datetime64)
+        }
+    
+    # Checking the last time
+    conditionsB = {
+        "cond4": type(last) == 'numpy.datetime64',
+        "cond5": isinstance(last, datetime),
         "cond6": isinstance(last, np.datetime64)
         }
     
+    # Combining as OR statement
+    conditions = {
+        "condA": not False in conditionsB.values(),
+        "condB": not False in conditionsA.values()
+        }
+    
+    # Raise error for invalid type
     if not True in conditions.values():
         raise TypeError('One or both of the input times is of an invalid type')
     
     # Testing that the input times are of the same type
     if type(first) != type(last):
         warnings.warn('Input times are not of the same type')
-        first, last = np.datetime64(first), np.datetime64(last)
+        
+    # Converting time type to np.datetime64 to give accurate timedelta
+    first, last = np.datetime64(first), np.datetime64(last)
     
     # Setting the time_type
     try:
@@ -194,23 +209,7 @@ def deltatime(first, last, freq = 'days'):
     answer = p.switch(first, last, time_type, freq)
     
     return answer
-    
-    """try:
-        type(first) != 'numpy.datetime64'
-        type(last) != 'numpy.datetime64'
-        isinstance(first, datetime)
-        isinstance(last, datetime)
-    except:
-        print("except")
-    else:
-        print("else")
-    
-    # if isinstance(a, datetime) and isinstance(b, datetime) != True:
-        # print("hi")
-    
-    if type(first) or type(last) not in ('numpy.datetime64') ^ isinstance(first, datetime) and isinstance(last, datetime) != True:
-        raise TypeError('One or both of the input times is of an invalid type')"""
-        
+
 """=========================================================================="""
 """--------------Functions for dealing with specific datasets----------------"""
 """=========================================================================="""
