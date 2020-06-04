@@ -112,7 +112,7 @@ if __name__ == '__main__':
 	"""Enables program to be executed using multiple processes/cores"""
 	startTime = datetime.now()
 	processes = []
-	for MM in range(4,5):
+	for MM in range(6,7):
 		p = multiprocessing.Process(target=eachmonth, args=(MM,))
 		processes.append(p)
 		p.start()
