@@ -53,7 +53,7 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'timlatband.nc' # Specifies data file
+infile = strdirectory + 'qbo-jun3rd.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -240,7 +240,7 @@ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'file810_2.png'
+pngsavename = 'filejun3rd.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")
