@@ -11,7 +11,7 @@ Aeolus data load from netCDF format for QBO test
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 
-generates zonal mean U plot at the equator
+colocates with one or two Singapore radiosonde profiles for testing
 ========================================================================
 """
 ########################################################################

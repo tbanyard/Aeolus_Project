@@ -58,6 +58,7 @@ print(dirs['Plots']) # Note, when Plots is created, I can use the exceptions.
 print(dirs['ncdir'])
 
 # Find and read netCDF data
+print("Opening Data from directory ", ncdir2, " lazily...")
 ds = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
     combine = 'nested', concat_dim = 'time')
     
@@ -111,7 +112,7 @@ print(test3)
 print("==/2/==")"""
 
 # Grouping and Binning data
-test3b = data['data_alt_band'].groupby("time.day")
+# test3b = data['data_alt_band'].groupby("time.day")
 # .group_bins ***LIKELY DEPRECATED***
 # test3c = data['data_alt'].groupby_bins("time.day", bins=alts/1000)
 # print("test3c: ", test3c.groups)
@@ -119,14 +120,14 @@ test3b = data['data_alt_band'].groupby("time.day")
 # Binning the altitudes according to the array alts
 binned_alts = xr.apply_ufunc(da.digitize, data['data_alt_band'], alts, dask='allowed', output_dtypes = [float])
 
-u_proj = data['data_u_proj_capped_band'].groupby("time.day")
-print(u_proj._unique_coord)
+# u_proj = data['data_u_proj_capped_band'].groupby("time.day")
+# print(u_proj._unique_coord)
 
-hered = binned_alts.groupby("time.day")
+# hered = binned_alts.groupby("time.day")
 
-print("u_proj: ", u_proj)
+# print("u_proj: ", u_proj)
 print("binned_alts: ", binned_alts)
-print("hered: ", hered)
+# print("hered: ", hered)
 print("==/3/==")
 
 # @delayed(pure=True)
@@ -139,7 +140,7 @@ def mean_each_alt(j):
     # print("sorted: ", new_winds.sortby('time').resample(time='1D'))
     # print("normal: ", new_winds.groupby("time.day"))
    
-    print("passed here for: j=", j)
+    print("passed here for: j =", j)
     # print(dir(new_winds2.mean()))
     # print(len(new_winds2.mean().values))
     answer = new_winds2.mean().values
@@ -180,7 +181,6 @@ for j in range(31):
 def runbuildz(alt_segment, day_pop, procfile):
     z = np.zeros((len(alt_segment), day_pop+1))
     itrn = 0
-    print("procfile:", type(procfile))
     for j in alt_segment:
         j = int(j)
         z[itrn][:] = mean_each_alt(j)
@@ -189,7 +189,7 @@ def runbuildz(alt_segment, day_pop, procfile):
     
 # Run as multiple processes for speed
 processes = [] # Initialise list for processes
-ncores = 4 # Number of CPU cores / workers used, 2GB required per core!
+ncores = 1 # Number of CPU cores / workers used, 2GB required per core!
 segment_size = np.ceil(31 / ncores) # Alts in worker segment, except last
 alts_km = alts / 1000 # List of altitudes in km
 first, last = 0, segment_size # First and last elements of first segment
@@ -229,9 +229,9 @@ with ProgressBar(minimum=3, dt=0.2):
 print(timestamp(pstartTime))
 
 # Saving timeseries to npy file
-np.save('u_proj_timeseries3.npy', z)
+np.save('u_proj_timeseries4.npy', z)
     
-time.sleep(300)
+time.sleep(3000)
 
 print("==/4/==")
 timestamp(pstartTime)

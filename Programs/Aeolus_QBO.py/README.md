@@ -6,6 +6,7 @@ can be found in this directory:
 Aeolus_QBO_timeseries_vx.x.py| Produces timeseries plots of disruption
 Aeolus_QBO_Feb20_vx.x.py| Precursor programs to the above (made Feb2020)
 Aeolus_QBO_CW_EQ_newbins| Produces cartographical plots of disruption
+Aeolus_QBO_TestProfiles_vx.x.py| Profiles of early June 2020 test orbits
 ========================================================================
 
 Details for each can be found below:
@@ -51,4 +52,20 @@ Aeolus_QBO_CW_EQ_newbins
 Reads .mat files converted from .nc files from the Aeolus database and 
 produces cartographical plots
 ========================================================================
+
+
+========================================================================
+Aeolus_QBO_TestProfiles_vx.x.py
+========================================================================
+------------------------------------------------------------------------
+---v1.0---Initial_File--------------------------------------------------
+---v1.1---Trimmed to look at the four equator passes of Jun 3rd---------
+---v1.2---Completed subplots with profile, fixing code------------------
+---v1.3---Focusing on one or two Singapore profiles---------------------
+------------------------------------------------------------------------
+========================================================================
+Reads .nc files converted from DBL files from the Aeolus database and 
+colocates with one or two Singapore radiosonde profiles for testing
+========================================================================
+
 

@@ -34,7 +34,7 @@ os.chdir('..') # Partly so that plots can be saved in their own folder
 # .npy file to load for plotting
 os.chdir('Programs')
 print(os.getcwd())
-npyfile = 'u_proj_timeseries3.npy'
+npyfile = 'u_proj_timeseries4.npy'
 
 # Load data for plotting
 z = np.load(npyfile, allow_pickle=True)
@@ -51,7 +51,7 @@ ax = fig.add_subplot(111)
 cs = plt.contourf(x, y/1000, z, levels=[-1000,-750,-500,-250,0,250,500,750,1000], vmin= -1000, vmax = 1000, cmap='RdBu_r')
 fig.colorbar(cs, cmap='RdBu_r', orientation='horizontal',
 	label='HLOS Rayleigh Wind Speed / ms-1')
-plt.savefig("xarraytest5.png", dpi=300)
+plt.savefig("xarraytest6.png", dpi=300)
 
 """
 # Load data for plotting

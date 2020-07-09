@@ -29,7 +29,7 @@ from dask.distributed import Client, LocalCluster
 # client = Client(cluster)
 # client = Client(processes=False)
 
-from dask.distributed import performance_report
+# from dask.distributed import performance_report
 
 # Multiprocessing
 import multiprocessing
