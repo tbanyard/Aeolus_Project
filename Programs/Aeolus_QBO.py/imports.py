@@ -24,7 +24,16 @@ from dask import array as da
 from dask import delayed, visualize
 from dask.diagnostics import ProgressBar
 pbar = ProgressBar()
-from dask.distributed import Client
-client = Client(processes=False)
+from dask.distributed import Client, LocalCluster
+# cluster = LocalCluster(n_workers=2, processes=False, threads_per_worker=1, memory_limit='7GB', scheduler_port=0)
+# client = Client(cluster)
+# client = Client(processes=False)
 
 from dask.distributed import performance_report
+
+# Multiprocessing
+import multiprocessing
+
+# Warnings
+import warnings
+warnings.filterwarnings('ignore')
