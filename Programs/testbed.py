@@ -34,11 +34,11 @@ os.chdir('..') # Partly so that plots can be saved in their own folder
 # .npy file to load for plotting
 os.chdir('Programs')
 print(os.getcwd())
-npyfile = 'u_proj_timeseries4.npy'
+npyfile = 'u_proj_timeseries5.npy'
 
 # Load data for plotting
 z = np.load(npyfile, allow_pickle=True)
-x = np.linspace(1, 31, 31)
+x = np.linspace(1, 521, 521)
 y = np.linspace(0, 30000, 31)
 
 # Change to plot directory to save plots

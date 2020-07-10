@@ -58,8 +58,8 @@ print(dirs['Plots']) # Note, when Plots is created, I can use the exceptions.
 print(dirs['ncdir'])
 
 # Find and read netCDF data
-print("Opening Data from directory ", ncdir2, " lazily...")
-ds = xr.open_mfdataset(dirs['ncdir2'] + '/*.nc',
+print("Opening Data from directory ", ncdir, " lazily...")
+ds = xr.open_mfdataset(dirs['ncdir'] + '/*.nc',
     combine = 'nested', concat_dim = 'time')
     
 # Create plot array (z) with a size matching start and end dates of data
@@ -229,7 +229,7 @@ with ProgressBar(minimum=3, dt=0.2):
 print(timestamp(pstartTime))
 
 # Saving timeseries to npy file
-np.save('u_proj_timeseries4.npy', z)
+np.save('u_proj_timeseries6.npy', z)
     
 time.sleep(3000)
 
