@@ -53,7 +53,7 @@ dirs = dict([('Programs', os.getcwd())])
 dirs['Plots'] = dirs['Programs'][:-8] + 'Plots'
 dirs['ncdir'], dirs['ncdir2'] = ncdir, ncdir2
 
-print(dirs['Programs']) # Generalise as much as possible!! Multiple .nc files???
+print(dirs['Programs']) # Generalise as much as possible. Multiple .nc files?
 print(dirs['Plots']) # Note, when Plots is created, I can use the exceptions.
 print(dirs['ncdir'])
 
@@ -95,40 +95,11 @@ data['data_lat_band'] = xr.where(lat_band==0, -99999999, data['data_lat'])
 data['data_lon_band'] = xr.where(lat_band==0, -99999999, data['data_lon'])
 data['data_alt_band'] = xr.where(lat_band==0, -99999999, data['data_alt'])
 
-"""# Now I use groupby to group by the day, test2 simply gives the mean for all alts.
-test = data['data_u_proj_capped'].groupby("time.day")
-test2 = data['data_u_proj_capped'].groupby("time.day").mean()
-print(test2.values)
-print("==/1/==")"""
-
-"""# returns an array pointing to the bin that each value is in
-def altgroup(x):
-    binplace = np.digitize(x, alts)
-    return binplace
-
-# groupby which applies the altgroup
-test3 = data['data_alt'].groupby("time.day").apply(altgroup)
-print(test3)
-print("==/2/==")"""
-
-# Grouping and Binning data
-# test3b = data['data_alt_band'].groupby("time.day")
-# .group_bins ***LIKELY DEPRECATED***
-# test3c = data['data_alt'].groupby_bins("time.day", bins=alts/1000)
-# print("test3c: ", test3c.groups)
-
 # Binning the altitudes according to the array alts
 binned_alts = xr.apply_ufunc(da.digitize, data['data_alt_band'], alts, dask='allowed', output_dtypes = [float])
 
-# u_proj = data['data_u_proj_capped_band'].groupby("time.day")
-# print(u_proj._unique_coord)
-
-# hered = binned_alts.groupby("time.day")
-
-# print("u_proj: ", u_proj)
 print("binned_alts: ", binned_alts)
-# print("hered: ", hered)
-print("==/3/==")
+print("==/1/==")
 
 # @delayed(pure=True)
 def mean_each_alt(j):
