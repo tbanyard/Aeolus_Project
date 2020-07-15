@@ -7,7 +7,8 @@ Aeolus data load from netCDF format for QBO test
 ---v1.1---Ascending/Descending Node Split-------------------------------
 ---v1.2---Daily_Means and creating .mat file for Neil-------------------
 ---v1.3---Plotting my own version of this plot extended out to March----
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+---vcalc--Branched copy of v1.3 for creating .nc files of the timeseries
+----------[BRANCH]-This_is_a_working_branch_version_of_this_file--------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 
@@ -179,8 +180,8 @@ for file in sorted(os.listdir(directory)):
 					y[alt_elmnt] += data_HLOS[t] * node
 					y_itrn[alt_elmnt] += 1"""
 		
-	# Proceed with daily mean calculation?
-	if currnext == 0:
+	# Proceed with daily mean calculation? Check if reached last file.
+	if currnext == 0 and file != sorted(os.listdir(directory))[-1]:
 		continue # Don't execute below code until the next day
 	currnext = 0
 	
