@@ -48,18 +48,10 @@ os.chdir('Plots')
 # Plotting data
 fig = plt.figure()
 ax = fig.add_subplot(111)
-# pcolor
-cs = plt.pcolormesh(x, y/1000, z/1000, cmap = 'RdBu_r', vmin=-5, vmax = 5)
-# imshow
-x_lims = [np.ndarray.flatten(x)[0], np.ndarray.flatten(x)[-1]]
-y_lims = [29.5, -0.5]
-cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent = [x_lims[0], x_lims[1], y_lims[0], y_lims[1]], vmin=-10, vmax = 10, interpolation='none')
-plt.gca().invert_yaxis() # Invert axis for imshow
-# contourf
-# cs = plt.contourf(x, y/1000, z, levels=[-2500,-2000,-1500,-1000,-500,0,500,1000,1500,2000,2500], vmin= -2500, vmax = 2500, cmap='RdBu_r')
+cs = plt.contourf(x, y/1000, z, levels=[-2500,-2000,-1500,-1000,-500,0,500,1000,1500,2000,2500], vmin= -2500, vmax = 2500, cmap='RdBu_r')
 fig.colorbar(cs, cmap='RdBu_r', orientation='horizontal',
 	label='HLOS Rayleigh Wind Speed / ms-1')
-plt.savefig("xarraytest6.png", dpi=2000)
+plt.savefig("xarraytest6.png", dpi=300)
 
 """
 # Load data for plotting
