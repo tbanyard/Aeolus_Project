@@ -54,16 +54,22 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'qbo-jul8th.nc' # Specifies data file
+infile = strdirectory + 'qbo-jul15th.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
 
-qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap3'), N=265)
+qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap7'), N=265)
 grayhatchescmap = LinearSegmentedColormap('Grayhatchescmap', segmentdata=customcolormaps('grayhatches'), N=265)
 grayhatchescmap_r = grayhatchescmap.reversed()
 whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=customcolormaps('whitehatches'), N=265)
 whitehatchescmap = whitehatchescmap_r.reversed()
+
+# Start element: For 01 July 2019 = 140; 01 Dec 2019 = 293
+wks = 4 # Number of weeks following RBS change
+se = 293
+rbs_se = 629-se
+ee = rbs_se - 140 + wks*7
 
 """=============================================================="""
 """======================Download Variables======================"""
@@ -79,16 +85,16 @@ calendar = 'standard', units = data.variables['time'].units)
 alts = data_alt
 # ~ print("Alts: ", alts)
 # ~ print("Shape of Alts: ", np.shape(alts))
-time = date_time[140:] # Change to [140::7] to see what one day per week is like
+time = date_time[se:] # Change to [140::7] to see what one day per week is like
 # ~ print("Time: ", time)
 # ~ print("Shape of Time: ", np.shape(time))
-z = data_u_proj[:,140:]
+z = data_u_proj[:,se:]
 # ~ print("z: ", z)
 # ~ print("Shape of z: ", np.shape(z))
 
 # ~ date_time = np.array([dates.date2num(date) for date in date_time])
 
-print(datetime.strftime(date_time[140], '%Y-%m-%d %H:%M:%S.%f'))
+print(datetime.strftime(date_time[293], '%Y-%m-%d %H:%M:%S.%f'))
 
 # These two commands take the real_datetime, convert to string, and then back to datetime.datetime
 date_time = np.array([datetime.strftime(date,
@@ -98,10 +104,16 @@ date_time = np.array([datetime.strptime(date,
 # The above code is not needed, but is a nice trick to convert from
 # real_datetime to datetime.datetime
 
-print("RBS Implementation Date (3 days before): ", date_time[489])
-			
+# Set to MPL Date_time format			
 date_time = np.array([dates.date2num(date) for date in date_time])
-date_time = date_time[140:]
+date_time = date_time[se:] # Start on 01 July 2019
+
+RBS_datechange = time[rbs_se-140]
+print("RBS Implementation Date (3 days before): ", RBS_datechange)
+
+# Finish at the end of the most recent full week
+date_time = date_time[:ee]
+z = z[:,:ee]
 
 np.set_printoptions(threshold=sys.maxsize)
 
@@ -124,9 +136,10 @@ y_lim_min = -0.5
 y_lims = [y_lim_max, y_lim_min]
 
 # Above 20km use only weekly data ,centred on date of QBO orbit RBS
-for dayidx in [352, 359, 366, 373]:
-	if dayidx == 373:
-		continue # This is just until the data has been fully downloaded
+# ~ for dayidx in [352, 359, 366, 373]:
+# ~ for dayidx in [ee-21-4, ee-14-4, ee-7-4, ee-4]:
+p = [rbs_se-140+3+7*_ for _ in range(wks)]
+for dayidx in p:
 	for diff in [-3, -2, -1, 1, 2, 3]:
 		z[20:,dayidx+diff] = z[20:,dayidx]
 
@@ -141,10 +154,9 @@ for xidx in range(len(isnanarray)):
 			hatcharray[xidx][yidx] = 1
 		else:
 			hatcharray[xidx][yidx] = 0
-		print(np.shape(hatcharray))
-hatcharray[24][349:] = 0 # Unmask 24km after RBS change
-hatcharray[26][349:] = 0 # Unmask 26km after RBS change
-hatcharray[23:27,330:351] = 1
+
+hatcharray[22:27,rbs_se-140:] = 0 # Unmask up to 26km after RBS change
+hatcharray[23:27,rbs_se-140-19:rbs_se-140+2] = 1
 hatcharray = ndimage.uniform_filter(hatcharray, size=(1,5), mode = 'reflect')
 hatcharray = savgol_filter(hatcharray, 27, 2, axis = 1)
 hatcharray = savgol_filter(hatcharray, 9, 2, axis = 1)
@@ -160,11 +172,11 @@ for xidx in range(len(z[0])):
 # ~ fixnanswithmean(z)
 
 # Apply filters separately above 20km before and after RBS change
-z[20:,:349] = ndimage.uniform_filter(z[20:,:349], size=(1,10), mode = 'reflect')
-z[20:,:349] = savgol_filter(z[20:,:349], 5, 2, axis = 1) # S-G filter
+z[20:,:rbs_se-140] = ndimage.uniform_filter(z[20:,:rbs_se-140], size=(1,10), mode = 'reflect')
+z[20:,:rbs_se-140] = savgol_filter(z[20:,:rbs_se-140], 5, 2, axis = 1) # S-G filter
 
-z[20:,349:] = ndimage.uniform_filter(z[20:,349:], size=(1,10), mode = 'reflect')
-z[20:,349:] = savgol_filter(z[20:,349:], 5, 2, axis = 1) # S-G filter
+z[20:,rbs_se-140:] = ndimage.uniform_filter(z[20:,rbs_se-140:], size=(1,10), mode = 'reflect')
+z[20:,rbs_se-140:] = savgol_filter(z[20:,rbs_se-140:], 5, 2, axis = 1) # S-G filter
 
 z[:20,:] = ndimage.uniform_filter(z[:20,:], size=(1,10), mode = 'reflect')
 z[:20,:] = savgol_filter(z[:20,:], 5, 2, axis = 1) # S-G filter
@@ -200,10 +212,10 @@ if imshow == True:
 elif imshow == False:
 	if interp == False:
 		cs = plt.contourf(x,y/1000,z, cmap=qbocmap,
-			levels=np.linspace(-25, 25, 51), vmin=-22, vmax=22)
+			levels=np.linspace(-35, 35, 29), vmin=-35, vmax=35)
 	elif interp == True:
 		cs = plt.contourf(xi2,yi2/1000,zi2, cmap=qbocmap,
-			levels=np.linspace(-25, 25, 51), vmin=-22, vmax=22)
+			levels=np.linspace(-35, 35, 29), vmin=-35, vmax=35)
 			
 	try:
 		cs4 = ax1.contour(xi2, yi2/1000, zi2, levels=[-20,-10,10,20], linewidths = 0.4, colors='k', vmin=-30, vmax=30, alpha=1)
@@ -251,11 +263,17 @@ ax2.set_yticks(np.arange(31))
 ax2.yaxis.set_major_locator(plt.MaxNLocator(16))
 ax2.yaxis.set_minor_locator(plt.MaxNLocator(31))
 
+# Add vertical line to demarcate beginning of new RBS
+ax1.axvline(x=dates.date2num(RBS_datechange), ymin=0, ymax=1, zorder = 11, color = 'black', linestyle = '--')
+
+# Add new RBS text
+plt.text(dates.date2num(RBS_datechange)+2, 27, "New \nRBS")
+
 # ~ ax1.tick_params(axis='y', which='minor', left=True) # Minor ticks
 # ~ ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 	# ~ which='both')
 	
-plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$5$^{{\circ}}$ Latitude (5-day mean) 2019-2020')
+plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$5$^{{\circ}}$ Latitude (5-day running mean) 2019-2020')
 
 # Add colorbar to figure
 fig.subplots_adjust(bottom=0.225, right=0.88, left=0.12)
@@ -264,12 +282,15 @@ cbar_ax = fig.add_axes([0.12, 0.125, 0.76, 0.03])
 	# ~ label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', cax=cbar_ax,
 	# ~ boundaries = [-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], ticks=[-30,-25,-20,-15,-10,-5,0,5,10,15,20,25,30], extend='both')
 
+# ~ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
+		# ~ label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = np.linspace(-22,22,23), ticks=np.linspace(-30,30,7), extend='both')
+# extending to +/-25 ms-1
 colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
-		label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = np.linspace(-22,22,23), ticks=np.linspace(-30,30,7), extend='both')
+		label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = np.linspace(-35,35,15), ticks=np.linspace(-30,30,7), extend='both')
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'filejul8th_new8.png'
+pngsavename = 'filejul15th.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")
