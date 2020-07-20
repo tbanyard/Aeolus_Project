@@ -54,12 +54,13 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'qbo-jul15th.nc' # Specifies data file
+infile = strdirectory + 'qbo-jul15th_10N-S.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
 
 qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap7'), N=265)
+# ~ qbocmap = qbocmap.reversed()
 grayhatchescmap = LinearSegmentedColormap('Grayhatchescmap', segmentdata=customcolormaps('grayhatches'), N=265)
 grayhatchescmap_r = grayhatchescmap.reversed()
 whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=customcolormaps('whitehatches'), N=265)
@@ -273,7 +274,7 @@ plt.text(dates.date2num(RBS_datechange)+2, 27, "New \nRBS")
 # ~ ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 	# ~ which='both')
 	
-plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$5$^{{\circ}}$ Latitude (5-day running mean) 2019-2020')
+plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$10$^{{\circ}}$ Latitude (5-day running mean) 2019-2020')
 
 # Add colorbar to figure
 fig.subplots_adjust(bottom=0.225, right=0.88, left=0.12)
@@ -286,11 +287,11 @@ cbar_ax = fig.add_axes([0.12, 0.125, 0.76, 0.03])
 		# ~ label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = np.linspace(-22,22,23), ticks=np.linspace(-30,30,7), extend='both')
 # extending to +/-25 ms-1
 colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
-		label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = np.linspace(-35,35,15), ticks=np.linspace(-30,30,7), extend='both')
+		label='U-component of HLOS Rayleigh Wind Speed / ms$^{-1}$', boundaries = np.linspace(-35,35,29), ticks=np.linspace(-30,30,7), extend='both')
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'filejul15th.png'
+pngsavename = 'filejul15th_new4.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")

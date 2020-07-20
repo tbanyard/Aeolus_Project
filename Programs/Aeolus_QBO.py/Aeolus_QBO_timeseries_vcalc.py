@@ -118,7 +118,7 @@ for file in sorted(os.listdir(directory)):
 	# Print full arrays without truncation
 	np.set_printoptions(threshold=sys.maxsize)
 	# Find where the satellite is within the equatorial band
-	lat_band = np.where(data_lat<-5, 0, (np.where(data_lat>5, 0, 1)))
+	lat_band = np.where(data_lat<-10, 0, (np.where(data_lat>10, 0, 1)))
 	
 	for t in range(len(rayleigh_times)):
 		now = coda.time_to_utcstring(rayleigh_times[t])
@@ -230,7 +230,7 @@ print("Shape of z: ", np.shape(z))
 # Creating netCDF file
 
 
-root = nc.Dataset('qbo-jul15th.nc', 'w', format = "NETCDF4")
+root = nc.Dataset('qbo-jul15th_10N-S.nc', 'w', format = "NETCDF4")
 root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
 root.institution = \
 "University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
