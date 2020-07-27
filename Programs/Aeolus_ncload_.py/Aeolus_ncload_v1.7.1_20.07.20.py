@@ -58,7 +58,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Jul2020/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Jun2019/'
 
 # Choose pcolor or imshow
 pc_or_im = 'im'
@@ -338,20 +338,24 @@ for file in os.listdir(directory):
 			# ~ z3 = savgol_filter(z, sg_lower, 2, axis = 0) # - Vertical S-G filter
 			try:
 				z2a = savgol_filter(z, 25, 2, axis = 1) # Horizontal + S-G filter
-				z2b = savgol_filter(z, 3, 2, axis = 1) # Horizontal - S-G filter
-				z4 = savgol_filter(z, 21, 2, axis = 0) # Vertical S-G filter
-				z6a = ndimage.gaussian_filter1d(z, 0.5, axis = 1)
-				z6b = ndimage.gaussian_filter1d(z, 0.5, axis = 0)
-				z6 = (z6a+z6b)/2
-				z7a = ndimage.gaussian_filter1d(z, 1, axis = 1)
-				z7b = ndimage.gaussian_filter1d(z, 1, axis = 0)
-				z7 = (z7a+z7b)/2
-				z5 = (z2b+z4)/2
+				z2b = savgol_filter(z, 5, 2, axis = 1) # Horizontal - S-G filter
+				# ~ z4 = savgol_filter(z, 21, 2, axis = 0) # Vertical S-G filter
+				# ~ z6a = ndimage.gaussian_filter1d(z, 0.5, axis = 1)
+				# ~ z6b = ndimage.gaussian_filter1d(z, 0.5, axis = 0)
+				# ~ z6 = (z6a+z6b)/2
+				# ~ z7a = ndimage.gaussian_filter1d(z, 1, axis = 1)
+				# ~ z7b = ndimage.gaussian_filter1d(z, 1, axis = 0)
+				# ~ z7 = (z7a+z7b)/2
+				# ~ z5 = (z2b+z4)/2
 			except:
 				continue
 			# ~ z = z3 - z2
 			# ~ z = z1 - z2
-			# ~ z = z2b - z2a
+			z = z2b - z2a
+			# Boxcar smooth:
+			# ~ z = ndimage.uniform_filter(z, size=(2,2), mode = 'reflect')
+			vminval = np.mean(z) - np.std(z)
+			vmaxval = np.mean(z) + np.std(z)
 						
 			# Plots using imshow
 			# ~ cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
@@ -361,15 +365,15 @@ for file in os.listdir(directory):
 				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
 				interpolation='none')
 				
-			if np.mean(z)<0:
-				cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
-					x_lims[1], y_lims[0], y_lims[1]], vmin=-60, vmax=-10,
-					interpolation='none')
+			# ~ if np.mean(z)<0:
+				# ~ cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
+					# ~ x_lims[1], y_lims[0], y_lims[1]], vmin=vminval, vmax=vmaxval,
+					# ~ interpolation='none')
 				
-			elif np.mean(z)>0:
-				cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
-					x_lims[1], y_lims[0], y_lims[1]], vmin=60, vmax=10,
-					interpolation='none')
+			# ~ elif np.mean(z)>0:
+				# ~ cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
+					# ~ x_lims[1], y_lims[0], y_lims[1]], vmin=vminval, vmax=vmaxval,
+					# ~ interpolation='none')
 
 			mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap,
 				extent=[x_lims[0], x_lims[1], y_lims[0], y_lims[1]], interpolation=im_interp)
