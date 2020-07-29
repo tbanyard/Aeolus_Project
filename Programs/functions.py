@@ -773,6 +773,72 @@ def run_interpolation(data_lat_new, data_lon_new, data_alt_new,
 	[(data_alt_new[t], data_lat_new[t], data_lon_new[t])]
 	result = griddata(x, y, evaluate_at)
 	return result
+	
+def topography_interpolation(lon, lat, topo_lon, topo_lat, topo_alt):
+	res = 0.25 # Topography dataset resolution
+
+	# Find surrounding latitude bands in topography dataset
+	lat_low, lat_hi= \
+	np.floor(lat*1/res)*res+(res/2)*(lat/np.abs(lat)), \
+	np.ceil(lat*1/res)*res+(res/2)*(lat/np.abs(lat))
+	if lat_low < lat < lat_hi:
+		pass
+	else:
+		lat_low, lat_hi= \
+		np.floor(lat*1/res)*res+(res/2)*(-lat/np.abs(lat)), \
+		np.ceil(lat*1/res)*res+(res/2)*(-lat/np.abs(lat))
+	
+	# Avoid the situation where lat_low = lat_hi for interpolation
+	if lat_low == lat_hi:
+		if lat_low > 0:
+			lat_low -= res
+		elif lat_low <= 0:
+			lat_low += res
+	
+	# Fixing longitude for Aeolus data
+	if lon == -180.0:
+		lon = 180.0
+	if lon <= 0.0:
+		lon += 360.0
+	
+	# Find surrounding longitude bands in topography dataset
+	lon_low, lon_hi = \
+	np.floor(lon*1/res)*res+(res/2)*(lon/np.abs(lon)), \
+	np.ceil(lon*1/res)*(res)+(res/2)*(lon/np.abs(lon))
+	if lon_low < lon < lon_hi:
+		pass
+	else:
+		lon_low, lon_hi = \
+		np.floor(lon*1/res)*res+(res/2)*(-lon/np.abs(lon)), \
+		np.ceil(lon*1/res)*(res)+(res/2)*(-lon/np.abs(lon))
+	
+	# Avoid the situation where lon_low = lon_hi for interpolation
+	if lon_low == lon_hi:
+		if lon_low > 0:
+			lon_low -= res
+		elif lon_low <= 0:
+			lon_low += res
+	
+	# Fixing dateline
+	if lon_low == -res/2:
+		lon_low += res
+	if lon_hi == 360 + res/2:
+		lon_hi -= res
+	
+	# Topography values at each corner
+	alt1 = topo_alt[np.where(topo_lat == lat_low)[0][0]][np.where(topo_lon == lon_low)[0][0]]
+	alt2 = topo_alt[np.where(topo_lat == lat_hi)[0][0]][np.where(topo_lon == lon_low)[0][0]]
+	alt3 = topo_alt[np.where(topo_lat == lat_low)[0][0]][np.where(topo_lon == lon_hi)[0][0]]
+	alt4 = topo_alt[np.where(topo_lat == lat_hi)[0][0]][np.where(topo_lon == lon_hi)[0][0]]
+	
+	# Gathering arrays and finding interpolant
+	x = [(lon_low, lat_low), (lon_low, lat_hi), (lon_hi, lat_low), (lon_hi, lat_hi)]
+	y = [alt1, alt2, alt3, alt4]
+	evaluate_at = [lon, lat]
+	result = griddata(x, y, evaluate_at)
+		
+	return result
+	
 
 def ncload():
 	return
