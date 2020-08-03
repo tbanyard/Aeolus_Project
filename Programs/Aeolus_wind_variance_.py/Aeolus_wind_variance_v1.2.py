@@ -42,8 +42,11 @@ from functions import ncload
 # Change current working directory to parent directory
 os.chdir('..')
 
+# Program Timing (Time taken to get through entire program)	
+pstartTime = datetime.now()
+
 # Set desired global variables
-res = 5 # Resolution of density plot in degrees
+res = 1.25 # Resolution of density plot in degrees
 resrcp = 1/res # Resolution Reciprocal
 
 # Check that the input resolution is acceptable
@@ -78,10 +81,12 @@ data_itrn = np.asarray([[0 for _ in np.linspace(-180,180,num_lon)] \
 for _ in np.linspace(-90,90,num_lat)])
 np.set_printoptions(threshold=sys.maxsize)
 
+time.sleep(1000)
+
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4_FullQC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Jun2019/'
 file_itrn = 0
 directory = os.fsencode(strdirectory)
 for file in sorted(os.listdir(directory)):
@@ -112,9 +117,11 @@ for file in sorted(os.listdir(directory)):
 	# Altitude
 	data_alt = data.variables['alt'][:]
 	# Horizontal Line of Sight Wind speed
-	data_HLOS = data.variables['HLOS_wind_speed'][:]
+	data_HLOS = data.variables['Rayleigh_HLOS_wind_speed'][:]
 	# Rayleigh_Grouping
 	RG = data.variables['RG'][:]
+	# Quality Control
+	data_QC = data.variables['QC_Flag_Both'][:]
 	# Time
 	rayleigh_times = data.variables['time'][:]
 	
@@ -125,17 +132,18 @@ for file in sorted(os.listdir(directory)):
 	hlos = np.empty((0,1))
 	times = np.empty((0,1))
 	
-	# Trim dataset to below 12km
+	# Trim dataset to between 5 and 10km
 	for t in range(len(data_alt)):
-		if data_alt[t] < 12000:
-			alts = np.append(alts, data_alt[t])
-			lats = np.append(lats, data_lat[t])
-			if data_lon[t] < 180:
-				lons = np.append(lons, data_lon[t])
-			if data_lon[t] >= 180:
-				lons = np.append(lons, data_lon[t]-360)
-			hlos = np.append(hlos, data_HLOS[t])
-			times = np.append(times, rayleigh_times[t])
+		if 10000 < data_alt[t] <= 15000:
+			if data_QC[t] == 1:
+				alts = np.append(alts, data_alt[t])
+				lats = np.append(lats, data_lat[t])
+				if data_lon[t] < 180:
+					lons = np.append(lons, data_lon[t])
+				if data_lon[t] >= 180:
+					lons = np.append(lons, data_lon[t]-360)
+				hlos = np.append(hlos, data_HLOS[t]/100)
+				times = np.append(times, rayleigh_times[t])
 	
 	# Building arrays
 	for t in range(len(hlos)):
@@ -193,7 +201,7 @@ map.drawparallels(parallels, linewidth=0.3)
 ax.set_xticks(meridians)
 ax.set_yticks(parallels)
 
-np.save("august19_sub12km_var.npy", data_vars, allow_pickle=True)
+np.save("varplottest3jun1.25.npy", data_vars, allow_pickle=True)
 
 fig.colorbar(cs, cmap='RdBu_r', orientation='horizontal',
 			label='HLOS Rayleigh Wind Speed variance / (ms$^{-1}$)$^{2}$')
@@ -204,5 +212,9 @@ plt.title(str_plt_title)
 
 # Saving figure
 os.chdir('variances')
-plt.savefig('august19_2.5.png',dpi=300)
+plt.savefig('varplottest3jun1.25.png',dpi=300)
 os.chdir('..')
+
+# Time taken for the file
+pduration = datetime.now() - pstartTime
+print('\nThat program took ', pduration, ' seconds to run')

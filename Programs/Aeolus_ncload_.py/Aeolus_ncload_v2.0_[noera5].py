@@ -63,7 +63,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read Aeolus netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4_FullQC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Jun2020/'
 """ERA5 directory"""
 ERA5_dir = '/home/tpb38/PhD/Bath/ERA5/'
 
@@ -208,6 +208,7 @@ for file in os.listdir(directory):
 		doy = yyyymmdd_to_doy(YYYY, MM, DD)
 		ncfile = ERA5_dir + str(YYYY) + '/era5_' + str(YYYY) + 'd' \
 		+ doy + '.nc'
+		ncfile = ERA5_dir + '2019' + '/era5_' + '2019' + 'd208.nc' # Dummy ERA5 dir.
 		print('ERA5 netCDF file:')
 		print(ncfile, '\n')
 		data = ERA5_dataload(ncfile)
@@ -231,6 +232,7 @@ for file in os.listdir(directory):
 		# Specify ERA5 data file
 		ncfile = ERA5_dir + str(YYYY2) + '/era5_' + str(YYYY2) + \
 		'd' + doy2 + '.nc'
+		ncfile = ERA5_dir + '2019' + '/era5_' + '2019' + 'd209.nc' # Dummy ERA5 dir.
 		print('Following ERA5 netCDF file:')
 		print(ncfile, '\n')
 		data = ERA5_dataload(ncfile)
@@ -300,7 +302,7 @@ for file in os.listdir(directory):
 			ERA5_data_v = new_ERA5_data_v
 				
 		# ==============================================================
-				
+		"""		 # DO NOT RUN ERA5 CODE
 		# =======================Run Interpolation======================
 		# Create a datetime format version of rayleigh_times_new
 		ERA5_u_interpolated = np.empty(0)
@@ -383,7 +385,8 @@ for file in os.listdir(directory):
 					ERA5_u_interpolated = np.append(ERA5_u_interpolated, y)
 				elif each == 'v':
 					ERA5_v_interpolated = np.append(ERA5_v_interpolated, y)
-
+		"""
+		
 		"""=========================================================="""
 		"""=================Creating arrays for plot================="""
 		"""=========================================================="""
@@ -395,8 +398,8 @@ for file in os.listdir(directory):
 		
 		# Interpolation onto plotting grid for both ERA5 and observations
 		data_obs = np.copy(data_HLOS_new) # Store observations for later use
-		data_mod = np.copy(ERA5_interpolated)*100 # Converts ERA5 data into cm/s
-		for each in ['mod', 'obs']:
+		# ~ data_mod = np.copy(ERA5_interpolated)*100 # Converts ERA5 data into cm/s
+		for each in ['obs']:
 			if each == 'mod':
 				data_HLOS_new = data_mod
 			elif each == 'obs':
@@ -550,6 +553,7 @@ for file in os.listdir(directory):
 		z_map_topo = topo_alt[519:681, 1119:1281]
 		x_map_topo, y_map_topo = np.meshgrid(x_map_topo, y_map_topo)
 		
+		"""ERA5 - DO NOT USE
 		# Fetching ERA5 file again for ERA5 map
 		if era5_type == 'andessfcvars':
 			ERA5_dir_andes = '/home/tpb38/PhD/Bath/ERA5_andessfcvars/'
@@ -560,6 +564,7 @@ for file in os.listdir(directory):
 			mdoy = yyyymmdd_to_doy(myear, mmonth, mday)
 			ncfile = ERA5_dir_andes + myear + '/era5_' + myear + 'd' \
 			+ mdoy + '.nc'
+			ncfile = ERA5_dir_andes + '2019' + '/era5_' + '2019' + 'd208.nc' # Dummy ERA5 dir.
 			print('\nERA5 netCDF file:')
 			print(ncfile, '\n')
 
@@ -622,7 +627,7 @@ for file in os.listdir(directory):
 			x_era5_map = np.arange(-80, -39.75, 0.25)
 			y_era5_map = np.arange(-80, -39.75, 0.25)
 			y_era5_map = y_era5_map[::-1]
-			x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)
+			x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)"""
 			
 		# ~ print(era5_data['data_t']) # Diagnostics
 		# ==============================================================
@@ -718,8 +723,8 @@ for file in os.listdir(directory):
 			# Selecting required data
 			# ~ fixnanswithmean(data_mod)
 			# ~ z = data_obs - data_mod # Find perturbations relative to smoothed ERA5
-			z = data_mod
-			# ~ z = data_obs
+			# ~ z = data_mod
+			z = data_obs
 						
 			# Plot profiles using imshow
 			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
@@ -790,6 +795,7 @@ for file in os.listdir(directory):
 		# ~ era5stuff = map.contourf(x_era5_map, y_era5_map, z_era5_map, cmap='Spectral_r',
 			# ~ zorder=2, alpha=0.8)
 		
+		""" ERA5 - DO NOT USE
 		# Simulated IR Cloud Fraction
 		era5_cloud = map.contourf(x_era5_cloud, y_era5_cloud, z_era5_cloud, cmap='Greys_r',
 			zorder=3, alpha=0.35)
@@ -803,7 +809,7 @@ for file in os.listdir(directory):
 		large_era5_mslp = map.contour(x_era5_mslp, y_era5_mslp, z_era5_mslp/100, levels=large_mslp_levels, linewidths=0.5, colors='b', zorder=5, alpha = 1)
 		ax2.clabel(large_era5_mslp, large_era5_mslp.levels, inline=True, fmt= '%d', fontsize=5)
 		# plt.colorbar(era5stuff, cax=ax2)
-		
+		"""
 		# Track Plot
 		map.scatter(data_lon_new - 360, data_lat_new, marker = 'x', color = 'red',
 			s=0.3, zorder=6)
@@ -850,7 +856,7 @@ for file in os.listdir(directory):
 		# ~ map.plot([-70, -65], [-70, -67], color='k')
 		
 		# Adding ERA5 timestamp to plot
-		ax2.text(-40,-40, tstamp, size=5.5, color = 'blue', ha="right", va="bottom", zorder = 10)
+		# ~ ax2.text(-40,-40, tstamp, size=5.5, color = 'blue', ha="right", va="bottom", zorder = 10)
 		
 		# ==================================================================== #
 
