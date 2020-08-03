@@ -266,8 +266,6 @@ for file in os.listdir(directory):
 		# Amend RG array
 		RG_new = RG[RG_start:RG_end+1]
 		z = z[:, RG_start:RG_end+1]
-		print(RG_start)
-		print(RG_end)
 		locs = locs[:, RG_start:RG_end+1]
 		
 		# Fixing time dimension to match coda format

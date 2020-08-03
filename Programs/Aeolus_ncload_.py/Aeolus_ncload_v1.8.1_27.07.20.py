@@ -83,6 +83,10 @@ elif region == 'azores':
 	minlat, maxlat, minlon, maxlon = 25, 50, 300, 340
 	bmlowlat, bmupperlat, bmleftlon, bmrightlon = 10, 70, -80, 0
 	
+# Choose ERA5 Map variable to plot
+era5_type = 'andessfcvars'
+era5_var = 'MSLP'
+	
 # Iterate through files in directory
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
@@ -477,8 +481,16 @@ for file in os.listdir(directory):
 			y_topo = np.append(y_topo,
 				topography_interpolation(locs[0][profile], locs[1][profile], 
 					topo_lon, topo_lat, topo_alt))
+					
+		# Creating topography for map
+		x_map_topo = topo_lon[1119:1281]-360
+		y_map_topo = topo_lat[519:681]
+		z_map_topo = topo_alt[519:681, 1119:1281]
+		x_map_topo, y_map_topo = np.meshgrid(x_map_topo, y_map_topo)
 		
-		# Fetching ERA5 file again for MSLP map (Need to download it first)
+		# Fetching ERA5 file again for ERA5 map
+		if era5_type == 'andessfcvars':
+			ERA5_dir = '/home/tpb38/PhD/Bath/ERA5_andessfcvars/'
 		midpoint_time = coda.time_to_utcstring(RG_new[int(np.ceil(len(RG_new)/2))])
 		myear, mmonth, mday, mtime = midpoint_time[0:4], midpoint_time[5:7], \
 			midpoint_time[8:10], midpoint_time[11:16]
@@ -506,19 +518,60 @@ for file in os.listdir(directory):
 		# ERA5 Map
 		import xarray as xr		
 		ds = xr.open_dataset(ncfile)
-		data = {
-			'data_t': ds.data_vars['t'][:],
-			'data_u': ds.data_vars['u'][:],
-			'data_v': ds.data_vars['v'][:]}
+		
+		# ERA5_Original Code
+		if era5_type == 'original':
+			era5_data = {
+				'data_t': ds.data_vars['t'][:],
+				'data_u': ds.data_vars['u'][:],
+				'data_v': ds.data_vars['v'][:]}
+				
+			andes_slice = era5_data['data_u'].isel(level=slice(19,20)).isel(time=slice(0, 1)).isel(latitude=slice(86, 115)).isel(longitude=slice(66,95))
+			print(andes_slice)
+			z_era5_map = andes_slice.values[0][0]	
+			x_era5_map = np.arange(-81, -37.5, 1.5)
+			y_era5_map = np.arange(-81, -37.5, 1.5)
+			y_era5_map = y_era5_map[::-1]
+			x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)
+		
+		# ERA5_andessfcvars Code
+		if era5_type == 'andessfcvars':
+			era5_data = {
+				'data_anor': ds.data_vars['anor'][:], # Angle of sub-gridscale orography
+				'data_isor': ds.data_vars['isor'][:], # Anisotropy of sub-gridscale orography
+				'data_lgws': ds.data_vars['lgws'][:], # Eastward GW surface stress
+				'data_gwd': ds.data_vars['gwd'][:], # GW dissipation
+				'data_msl': ds.data_vars['msl'][:], # MSLP
+				'data_mgws': ds.data_vars['mgws'][:], # Northward GW surface stress
+				'data_z': ds.data_vars['z'][:], # Geopotential
+				'data_slor': ds.data_vars['slor'][:], # Slope of sub-gridscale orography
+				'data_sdor': ds.data_vars['sdor'][:], # Stddev of orography
+				'data_tcc': ds.data_vars['tcc'][:]} # Cloud area fraction
 			
-		print(data['data_t'])
-		andes_slice = data['data_u'].isel(level=slice(19,20)).isel(time=slice(0, 1)).isel(latitude=slice(86, 115)).isel(longitude=slice(66,95))
-		print(andes_slice)
-		z_era5_map = andes_slice.values[0][0]	
-		x_era5_map = np.arange(-81, -37.5, 1.5)
-		y_era5_map = np.arange(-81, -37.5, 1.5)
-		y_era5_map = y_era5_map[::-1]
-		x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)
+			# Simulated IR Cloud Fraction
+			andes_cloud = era5_data['data_tcc'].isel(time=slice(0,1)).isel(latitude=slice(160, 321)).isel(longitude=slice(40, 201))
+			z_era5_cloud = andes_cloud.values[0]
+			x_era5_cloud = np.arange(-80, -39.75, 0.25)
+			y_era5_cloud = np.arange(-80, -39.75, 0.25)
+			y_era5_cloud = y_era5_cloud[::-1]
+			x_era5_cloud, y_era5_cloud = np.meshgrid(x_era5_cloud, y_era5_cloud)
+			
+			# MSLP contour plot
+			andes_mslp = era5_data['data_msl'].isel(time=slice(0,1)).isel(latitude=slice(160, 321)).isel(longitude=slice(40, 201))
+			z_era5_mslp = andes_mslp.values[0]
+			x_era5_mslp = np.arange(-80, -39.75, 0.25)
+			y_era5_mslp = np.arange(-80, -39.75, 0.25)
+			y_era5_mslp = y_era5_mslp[::-1]
+			x_era5_mslp, y_era5_mslp = np.meshgrid(x_era5_mslp, y_era5_mslp)
+			
+			andes_slice = era5_data['data_anor'].isel(time=slice(0,1)).isel(latitude=slice(160, 321)).isel(longitude=slice(40, 201))
+			z_era5_map = andes_slice.values[0]
+			x_era5_map = np.arange(-80, -39.75, 0.25)
+			y_era5_map = np.arange(-80, -39.75, 0.25)
+			y_era5_map = y_era5_map[::-1]
+			x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)
+			
+		# ~ print(era5_data['data_t']) # Diagnostics
 		
 		"""=========================================================="""
 		"""=======================Plotting==========================="""
@@ -634,27 +687,48 @@ for file in os.listdir(directory):
 					llcrnrlon=bmleftlon,urcrnrlon=bmrightlon,resolution='i', ax=ax2)
 		# ~ map = Basemap(projection='cyl',llcrnrlat=-80,urcrnrlat=-40,\
 					# ~ llcrnrlon=-80,urcrnrlon=-40,resolution='i', ax=ax2)
-		map.fillcontinents(color='#ffdd99', lake_color='#cceeff')
+		map.fillcontinents(color='#ffdd99', lake_color='#cceeff', zorder = 2, alpha=1)
 		map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
-		map.drawcoastlines(linewidth=0.25, color='#666666', zorder=3)
+		# ~ map.etopo(zorder=2)
+		map.drawcoastlines(linewidth=0.25, color='#666666', zorder=5)
 		if region == 'andes':
-			map.drawmeridians([-70, -60, -50], linewidth=0.3)
-			map.drawparallels([-70, -60, -50], linewidth=0.3)
+			map.drawmeridians([-70, -60, -50], linewidth=0.3, zorder=5)
+			map.drawparallels([-70, -60, -50], linewidth=0.3, zorder=5)
 		elif region == 'azores':
-			map.drawmeridians([-60, -40, -20], linewidth=0.3)
-			map.drawparallels([20, 30, 40, 50, 60], linewidth=0.3)
-			
+			map.drawmeridians([-60, -40, -20], linewidth=0.3, zorder=5)
+			map.drawparallels([20, 30, 40, 50, 60], linewidth=0.3, zorder=5)
+		
+		# Map topography
+		topo_levels = [25.100,200,500,1000,1500,2000,2500]
+		trial_levels = np.geomspace(150, 3100, num=15)
+		map_topo_iso = map.contour(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, colors='k', linewidths = 0.15, zorder=4, alpha = 0.4)
+		map_topo = map.contourf(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, cmap='copper_r', zorder=3, alpha = 1)
+		map_topo2 = map.contourf(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, cmap='Oranges', zorder=3, alpha = 0.4)
+		map_topo3 = map.contourf(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, cmap='Greys', zorder=3, alpha = 0.25)
 		# ERA5 Overlay
 		# ~ era5stuff = map.contourf(x_era5_map, y_era5_map, z_era5_map, cmap='RdBu_r',
 			# ~ levels=np.linspace(-150, 150, 26), vmin = -150, vmax = 150, zorder=2, alpha=0.8)
-		era5stuff = map.contourf(x_era5_map, y_era5_map, z_era5_map, cmap='Spectral_r',
-			zorder=2, alpha=0.8)
+		# ~ era5stuff = map.contourf(x_era5_map, y_era5_map, z_era5_map, cmap='Spectral_r',
+			# ~ zorder=2, alpha=0.8)
+		
+		# Simulated IR Cloud Fraction
+		era5_cloud = map.contourf(x_era5_cloud, y_era5_cloud, z_era5_cloud, cmap='Greys_r',
+			zorder=3, alpha=0.35)
+		
+		# MSLP plot
+		small_mslp_levels = np.arange(920, 1060, 2)
+		large_mslp_levels = np.arange(920, 1060, 10)
+		for i in large_mslp_levels: # Remove multiples of ten for better isobars
+			small_mslp_levels = np.delete(small_mslp_levels, np.where(small_mslp_levels == i))
+		small_era5_mslp = map.contour(x_era5_mslp, y_era5_mslp, z_era5_mslp/100, levels=small_mslp_levels, linewidths=0.2, colors='b', zorder=5, alpha = 1)
+		large_era5_mslp = map.contour(x_era5_mslp, y_era5_mslp, z_era5_mslp/100, levels=large_mslp_levels, linewidths=0.5, colors='b', zorder=5, alpha = 1)
+		ax2.clabel(large_era5_mslp, large_era5_mslp.levels, inline=True, fmt= '%d', fontsize=5)
 		# plt.colorbar(era5stuff, cax=ax2)
 		
 		# Track Plot
 		map.scatter(data_lon_new - 360, data_lat_new, marker = 'x', color = 'red',
-			s=0.3, zorder=4)
-		map.plot(data_lon_new - 360, data_lat_new, color = 'red', linewidth = '0.5')
+			s=0.3, zorder=6)
+		map.plot(data_lon_new - 360, data_lat_new, color = 'red', linewidth = '0.5', zorder=6)
 		midpointlonindex = int(np.floor(len(data_lon_new)/2))
 		midpointlatindex = int(np.floor(len(data_lat_new)/2))
 		# ~ map.quiver(data_lon[midpointlonindex]-360, data_lat[midpointlatindex],
@@ -687,9 +761,9 @@ for file in os.listdir(directory):
 			except:
 				continue
 			map.quiver(lon_loc, lat_loc, data_lat_new[idx-30] - data_lat_new[idx+30],
-				data_lon_new[idx+30] - data_lon_new[idx-30], angles='xy', color='black',
-				zorder=3, headaxislength=0, headlength=0, pivot='middle', units='xy')
-			ax2.annotate(str_time, (lon_loc+1, lat_loc+1), fontsize=6, zorder=5)
+				data_lon_new[idx+30] - data_lon_new[idx-30], angles='xy', color='k',
+				zorder=7, width = 0.5, headaxislength=0, headlength=0, pivot='middle', units='xy')
+			ax2.annotate(str_time, (lon_loc+1, lat_loc+1), fontsize=8, zorder=7, color = 'k', weight='demibold')
 			
 			# ~ a = ax1.xaxis.get_ticklabels()
 			# ~ print(text.Text(agg_filter=a))
@@ -708,7 +782,9 @@ for file in os.listdir(directory):
 		ax2.set_aspect('auto') # Stretch map to fill subplot
 		for axis in ['top','bottom','left','right']: # Set axes thickness
 			ax1.spines[axis].set_linewidth(0.75)
+			ax1.spines[axis].set_zorder(10)
 			ax2.spines[axis].set_linewidth(0.75)
+			ax2.spines[axis].set_zorder(10)
 		
 		# Add colorbar to figure
 		fig.subplots_adjust(bottom=0.2, right=0.88, left=0.12)
@@ -766,7 +842,7 @@ for file in os.listdir(directory):
 		
 		# Access ERA5 Co-location directory
 		os.chdir('ERA5_Co-location')
-		plt.savefig(pngsavename, dpi=300)
+		plt.savefig(pngsavename, dpi=600)
 		os.chdir('..')
 		
 		# Time taken for the file

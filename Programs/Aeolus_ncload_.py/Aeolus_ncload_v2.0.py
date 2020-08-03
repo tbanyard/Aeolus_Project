@@ -63,7 +63,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read Aeolus netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4_FullQC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Aug2019/'
 """ERA5 directory"""
 ERA5_dir = '/home/tpb38/PhD/Bath/ERA5/'
 
@@ -87,13 +87,22 @@ if region == 'andes':
 elif region == 'azores':
 	minlat, maxlat, minlon, maxlon = 25, 50, 300, 340
 	bmlowlat, bmupperlat, bmleftlon, bmrightlon = 10, 70, -80, 0
-	
+
+# Smooth era5 to calculate perturbations? If using S-G set as False
+smooth_era5 = False
+
+# Choose ERA5 Map type	
+era5_type = 'andessfcvars'
+
+# Program Timing (Time taken to get through entire program)	
+pstartTime = datetime.now()
+
 # Iterate through files in directory
 directory = os.fsencode(strdirectory)
 for file in os.listdir(directory):
 	
 	print("\n===========================================================")
-	
+	print("Beginning working directory:", os.getcwd())
 	# Program Timing (Time taken to get through one file)	
 	fstartTime = datetime.now()
 	
@@ -116,24 +125,19 @@ for file in os.listdir(directory):
 	data_alt = data.variables['alt'][:]
 	# Horizontal Line of Sight Wind speed
 	data_HLOS = data.variables['Rayleigh_HLOS_wind_speed'][:]
-	# ~ data_HLOS = data.variables['Zonal_wind_projection'][:]
-	# ~ data_HLOS = data.variables['Meridional_wind_projection'][:]
-	# ~ data_HLOS = data.variables['LOS_azimuth'][:]
 	# Zonal Wind Projection
 	data_u_wind = data.variables['Zonal_wind_projection'][:]
 	# Meridional Wind Projection
 	data_v_wind = data.variables['Meridional_wind_projection'][:]
 	# Line-of-sight azimuth
 	data_azimuth = data.variables['LOS_azimuth'][:]
-		
 	# Rayleigh_Grouping
 	RG = data.variables['RG'][:]
 	# Time
 	rayleigh_times = data.variables['time'][:]
-
-	# Converted time
-	# ~ data_time = nc.num2date(data.variables['time'][:],\
-	# ~ calendar = 'standard', units = data.variables['time'].units)
+	# Both QC Flags	
+	data_QC = data.variables['QC_Flag_Both'][:]	
+	# Close data file
 	data.close()
 
 	"""=============================================================="""
@@ -180,6 +184,7 @@ for file in os.listdir(directory):
 				itrn += u[1]
 	
 		if end_elmnt == 0:
+			print("I found the end_elmnt to be 0=-=-=-=-=-=--=--=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-")
 			continue
 		
 		# Amend arrays
@@ -188,9 +193,10 @@ for file in os.listdir(directory):
 		data_alt_new = data_alt[start_elmnt:end_elmnt+1]
 		data_HLOS_new = data_HLOS[start_elmnt:end_elmnt+1]
 		rayleigh_times_new = rayleigh_times[start_elmnt:end_elmnt+1]
-		data_u_wind = data_u_wind[start_elmnt:end_elmnt+1]
-		data_v_wind = data_v_wind[start_elmnt:end_elmnt+1]
-		data_azimuth = data_azimuth[start_elmnt:end_elmnt+1]
+		data_u_wind_new = data_u_wind[start_elmnt:end_elmnt+1]
+		data_v_wind_new = data_v_wind[start_elmnt:end_elmnt+1]
+		data_azimuth_new = data_azimuth[start_elmnt:end_elmnt+1]
+		data_QC_new = data_QC[start_elmnt:end_elmnt+1]
 
 		"""=========================================================="""
 		"""=====================ERA5 Interpolation==================="""
@@ -245,56 +251,54 @@ for file in os.listdir(directory):
 		# ==============================================================
 		
 		# =====================Smooth u and v fields====================
-		print(np.shape(ERA5_data_u))
+		if smooth_era5 == True:
 		
-		# Here, altdiff, latdiff and londiff give the fwhm window size in km.
-		# From this, the fwhm window size in points is found and converted to sd
-		
-		# Calculate latitude difference
-		lats = np.deg2rad(np.array([-50,-51.5]))
-		lons = np.deg2rad(np.array([-70,-70]))
-		latdiff = haversine(lats, lons)
-		lat_sig = (3 / latdiff) / 2.355 # This is for 3km
-		print("lat_sig: ", lat_sig)
-		
-		# Calculate longitude difference
-		lats = np.deg2rad(np.array([-50,-50]))
-		lons = np.deg2rad(np.array([-70,-71.5]))
-		londiff = haversine(lats, lons)
-		lon_sig = (3 / londiff) / 2.355 # This is for 3km
-		print("lon_sig: ", lon_sig)
-		
-		ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, lat_sig, axis = 2)
-		ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, lon_sig, axis = 3)
-		ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, lat_sig, axis = 2)
-		ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, lon_sig, axis = 3)
-		
-		new_ERA5_data_u = np.copy(ERA5_data_u)
-		new_ERA5_data_v = np.copy(ERA5_data_v)
-		
-		# Iterate through model levels and find alt difference with next level
-		for lev in range(111):
-			if lev != 136:
-				altdiff = ERA5_altitudes[lev] - ERA5_altitudes[lev+1]
-			elif lev == 136:
-				altdiff = ERA5_altitudes[lev]
-			alt_sig = (10000 / altdiff) / 2.355
-			print(lev + 1)
-			print(alt_sig)
+			# Here, altdiff, latdiff and londiff give the fwhm window size in km.
+			# From this, the fwhm window size in points is found and converted to sd
 			
-			if lev != 110:
-				temp_ERA5_data_u = np.copy(ndimage.gaussian_filter1d(ERA5_data_u, alt_sig, axis = 1))
-				new_ERA5_data_u[:, lev, :, :] = temp_ERA5_data_u[:, lev, :, :]
-				temp_ERA5_data_v = np.copy(ndimage.gaussian_filter1d(ERA5_data_v, alt_sig, axis = 1))
-				new_ERA5_data_v[:, lev, :, :] = temp_ERA5_data_v[:, lev, :, :]
-			if lev == 110:
-				temp_ERA5_data_u = np.copy(ndimage.gaussian_filter1d(ERA5_data_u, alt_sig, axis = 1))
-				new_ERA5_data_u[:, 110:-1, :, :] = temp_ERA5_data_u[:, 110:-1, :, :]
-				temp_ERA5_data_v = np.copy(ndimage.gaussian_filter1d(ERA5_data_v, alt_sig, axis = 1))
-				new_ERA5_data_v[:, 110:-1, :, :] = temp_ERA5_data_v[:, 110:-1, :, :]
-		
-		ERA5_data_u = new_ERA5_data_u
-		ERA5_data_v = new_ERA5_data_v
+			# Calculate latitude difference
+			lats = np.deg2rad(np.array([-50,-51.5]))
+			lons = np.deg2rad(np.array([-70,-70]))
+			latdiff = haversine(lats, lons)
+			lat_sig = (3 / latdiff) / 2.355 # This is for 3km
+			print("lat_sigma: ", lat_sig)
+			
+			# Calculate longitude difference
+			lats = np.deg2rad(np.array([-50,-50]))
+			lons = np.deg2rad(np.array([-70,-71.5]))
+			londiff = haversine(lats, lons)
+			lon_sig = (3 / londiff) / 2.355 # This is for 3km
+			print("lon_sigma: ", lon_sig)
+			
+			ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, lat_sig, axis = 2)
+			ERA5_data_u = ndimage.gaussian_filter1d(ERA5_data_u, lon_sig, axis = 3)
+			ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, lat_sig, axis = 2)
+			ERA5_data_v = ndimage.gaussian_filter1d(ERA5_data_v, lon_sig, axis = 3)
+			
+			new_ERA5_data_u = np.copy(ERA5_data_u)
+			new_ERA5_data_v = np.copy(ERA5_data_v)
+			
+			# Iterate through model levels and find alt difference with next level
+			for lev in range(111):
+				if lev != 136:
+					altdiff = ERA5_altitudes[lev] - ERA5_altitudes[lev+1]
+				elif lev == 136:
+					altdiff = ERA5_altitudes[lev]
+				alt_sig = (10000 / altdiff) / 2.355
+				
+				if lev != 110:
+					temp_ERA5_data_u = np.copy(ndimage.gaussian_filter1d(ERA5_data_u, alt_sig, axis = 1))
+					new_ERA5_data_u[:, lev, :, :] = temp_ERA5_data_u[:, lev, :, :]
+					temp_ERA5_data_v = np.copy(ndimage.gaussian_filter1d(ERA5_data_v, alt_sig, axis = 1))
+					new_ERA5_data_v[:, lev, :, :] = temp_ERA5_data_v[:, lev, :, :]
+				if lev == 110:
+					temp_ERA5_data_u = np.copy(ndimage.gaussian_filter1d(ERA5_data_u, alt_sig, axis = 1))
+					new_ERA5_data_u[:, 110:-1, :, :] = temp_ERA5_data_u[:, 110:-1, :, :]
+					temp_ERA5_data_v = np.copy(ndimage.gaussian_filter1d(ERA5_data_v, alt_sig, axis = 1))
+					new_ERA5_data_v[:, 110:-1, :, :] = temp_ERA5_data_v[:, 110:-1, :, :]
+			
+			ERA5_data_u = new_ERA5_data_u
+			ERA5_data_v = new_ERA5_data_v
 				
 		# ==============================================================
 				
@@ -318,8 +322,8 @@ for file in os.listdir(directory):
 			for each in ['u', 'v', 'hlos']:
 				# If 'hlos' then we have already got a u and v value so:
 				if each == 'hlos':
-					hlos = (-ERA5_u_interpolated[t] * np.sin(data_azimuth[t] * (np.pi/180))) - \
-						(ERA5_v_interpolated[t] * np.cos(data_azimuth[t] * (np.pi/180)))
+					hlos = (-ERA5_u_interpolated[t] * np.sin(data_azimuth_new[t] * (np.pi/180))) - \
+						(ERA5_v_interpolated[t] * np.cos(data_azimuth_new[t] * (np.pi/180)))
 					ERA5_interpolated = np.append(ERA5_interpolated, hlos)
 					# Now we skip the rest of the loop
 					continue
@@ -380,21 +384,17 @@ for file in os.listdir(directory):
 					ERA5_u_interpolated = np.append(ERA5_u_interpolated, y)
 				elif each == 'v':
 					ERA5_v_interpolated = np.append(ERA5_v_interpolated, y)
-			
-		# ~ print(len(ERA5_interpolated))
-		# ~ print(len(rayleigh_times_new))
-		# ~ data_HLOS_new = np.copy(ERA5_interpolated)*100 
-		# ~ print(data_HLOS_new)
+
 		"""=========================================================="""
 		"""=================Creating arrays for plot================="""
 		"""=========================================================="""
 
 		# Initialise meshgrids for x, y and z
-		maxheight = 20000
+		maxheight = 24000
 		levnum = (maxheight / vert_res) + 1
 		alts = np.linspace(0,maxheight, levnum)
 		
-		# Detrending to the smoothed model
+		# Interpolation onto plotting grid for both ERA5 and observations
 		data_obs = np.copy(data_HLOS_new) # Store observations for later use
 		data_mod = np.copy(ERA5_interpolated)*100 # Converts ERA5 data into cm/s
 		for each in ['mod', 'obs']:
@@ -438,8 +438,12 @@ for file in os.listdir(directory):
 			else:
 			# ============NEW INTERPOLATION ROUTINE==============
 				z_new = np.zeros((len(alts),len(RG))) # NumPy Arrays
-				points = np.empty(0)
-				values = np.empty(0)
+				locs = np.zeros((3, len(RG))) # For topography
+				points = np.empty(0) # For AE/ERA5
+				values = np.empty(0) # For AE/ERA5
+				lons = np.empty(0) # For topography
+				lats = np.empty(0) # For topography
+				times = np.empty(0) # For topography
 				lastgroupstarttime = 0
 				RG_start = 0
 				for RG_elmnt in range(len(RG)):
@@ -452,15 +456,25 @@ for file in os.listdir(directory):
 								RG_start = RG_elmnt
 							# Cap wind speeds to 250 m/s
 							if np.abs(data_HLOS_new[t]) < 25000:
-								if data_alt_new[t] in points:
-									itis = np.where(points == data_alt_new[t])
-								points = np.append(points, data_alt_new[t])
-								values = np.append(values, data_HLOS_new[t])
+								if data_QC_new[t] == 1:
+									points = np.append(points, data_alt_new[t])
+									values = np.append(values, data_HLOS_new[t])
+							# Lons, Lats and Times for later topography
+							lons = np.append(lons, data_lon_new[t])
+							lats = np.append(lats, data_lat_new[t])
+							times = np.append(times, rayleigh_times_new[t])
+							# Rest RG_elmnt
 							RG_end = RG_elmnt
 					lastgroupstarttime = RG[RG_elmnt]
 					z_new[:, RG_elmnt] = griddatainterpolation(points, values, alts)
+					# locs contains the avg loc info for each RG profile [lons,lats,times]
+					locs[0, RG_elmnt], locs[1, RG_elmnt], locs[2, RG_elmnt] = \
+						np.mean(lons), np.mean(lats), np.mean(times)
 					points = np.empty(0)
 					values = np.empty(0)
+					lons = np.empty(0)
+					lats = np.empty(0)
+					times = np.empty(0)
 			# ===================================================
 								
 			# Find the mean for each bin (Toggled on for old interpolation)
@@ -473,24 +487,18 @@ for file in os.listdir(directory):
 			# Amend RG array
 			RG_new = RG[RG_start:RG_end+1]
 			z = z[:, RG_start:RG_end+1]
+			locs = locs[:, RG_start:RG_end+1]
+			
+			# Dealing with empty profiles at beginning and end
+			for RG_i in [0, -1]:
+				if not 0 not in z[:,RG_i]:
+					z[:,RG_i] = np.NaN
 			
 			if each == 'mod':			
 				data_mod = np.copy(z)
 			elif each == 'obs':
 				data_obs = np.copy(z)
 	
-		# Applying NaN mask
-		grayhatchescmap = LinearSegmentedColormap('Grayhatchescmap',
-			segmentdata=customcolormaps('grayhatches'), N=265)
-		isnanarray = np.isnan(z)
-		hatcharray = np.copy(z)
-		for horidx in range(len(isnanarray)):
-			for veridx in range(len(isnanarray[horidx])):
-				if isnanarray[horidx][veridx] == True:
-					hatcharray[horidx][veridx] = 1
-				else:
-					hatcharray[horidx][veridx] = 0
-		
 		# Fixing time dimension to match coda format
 		date_time = coda.time_to_utcstring(RG_new[:])
 		date_time = np.array([datetime.strptime(date,
@@ -500,12 +508,124 @@ for file in os.listdir(directory):
 		rayleigh_times_new = np.array([datetime.strptime(date,
 			'%Y-%m-%d %H:%M:%S.%f') for date in rayleigh_times_new])
 		x, y = np.meshgrid(date_time, alts)
+		
+		# Applying NaN mask
+		grayhatchescmap = LinearSegmentedColormap('Grayhatchescmap',
+			segmentdata=customcolormaps('grayhatches'), N=265)
+		isnanarray = np.isnan(data_obs)
+		hatcharray = np.copy(data_obs)
+		for horidx in range(len(isnanarray)):
+			for veridx in range(len(isnanarray[horidx])):
+				if isnanarray[horidx][veridx] == True:
+					hatcharray[horidx][veridx] = 1
+				else:
+					hatcharray[horidx][veridx] = 0
+					
+		# Adding topography time-series
+		topodir = '/home/tpb38/PhD/Bath/TBASE/elev.0.25-deg.nc'
+		topo = nc.Dataset(topodir)	
+		# Longitude
+		topo_lon = topo.variables['lon'][:]
+		# Latitude
+		topo_lat = topo.variables['lat'][:]
+		# Altitude
+		topo_alt = topo.variables['data'][0]
+		
+		# Creating x_topo for topography plot
+		x_topo = coda.time_to_utcstring(locs[2][:])
+		x_topo = np.array([datetime.strptime(date,
+			'%Y-%m-%d %H:%M:%S.%f') for date in x_topo])
+		x_topo = dates.date2num(x_topo)
+				
+		# Creating y-topo for topography plot using topography_interpolation func
+		y_topo = np.zeros(0)
+		for profile in range(len(locs[0])):
+			y_topo = np.append(y_topo,
+				topography_interpolation(locs[0][profile], locs[1][profile], 
+					topo_lon, topo_lat, topo_alt))
+		
+		# ================Topography and ERA5 data for Map==============
+		# Creating topography for map
+		x_map_topo = topo_lon[1119:1281]-360
+		y_map_topo = topo_lat[519:681]
+		z_map_topo = topo_alt[519:681, 1119:1281]
+		x_map_topo, y_map_topo = np.meshgrid(x_map_topo, y_map_topo)
+		
+		# Fetching ERA5 file again for ERA5 map
+		if era5_type == 'andessfcvars':
+			ERA5_dir_andes = '/home/tpb38/PhD/Bath/ERA5_andessfcvars/'
+			midpoint_time = coda.time_to_utcstring(RG_new[int(np.ceil(len(RG_new)/2))])
+			myear, mmonth, mday, mtime = midpoint_time[0:4], midpoint_time[5:7], \
+				midpoint_time[8:10], midpoint_time[11:16]
+			print("\nFetching ERA5 netCDF file for map for", myear, "-", mmonth, "-", mday, mtime)
+			mdoy = yyyymmdd_to_doy(myear, mmonth, mday)
+			ncfile = ERA5_dir_andes + myear + '/era5_' + myear + 'd' \
+			+ mdoy + '.nc'
+			print('\nERA5 netCDF file:')
+			print(ncfile, '\n')
+
+		# ERA5 Map
+		import xarray as xr		
+		ds = xr.open_dataset(ncfile)
+		
+		# ERA5_Original Code
+		if era5_type == 'original':
+			era5_data = {
+				'data_t': ds.data_vars['t'][:],
+				'data_u': ds.data_vars['u'][:],
+				'data_v': ds.data_vars['v'][:]}	
+			andes_slice = era5_data['data_u'].isel(level=slice(19,20)).isel(time=slice(0, 1)).isel(latitude=slice(86, 115)).isel(longitude=slice(66,95))
+			z_era5_map = andes_slice.values[0][0]	
+			x_era5_map = np.arange(-81, -37.5, 1.5)
+			y_era5_map = np.arange(-81, -37.5, 1.5)
+			y_era5_map = y_era5_map[::-1]
+			x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)
+		
+		# ERA5_andessfcvars Code
+		if era5_type == 'andessfcvars':
+			era5_data = {
+				'data_anor': ds.data_vars['anor'][:], # Angle of sub-gridscale orography
+				'data_isor': ds.data_vars['isor'][:], # Anisotropy of sub-gridscale orography
+				'data_lgws': ds.data_vars['lgws'][:], # Eastward GW surface stress
+				'data_gwd': ds.data_vars['gwd'][:], # GW dissipation
+				'data_msl': ds.data_vars['msl'][:], # MSLP
+				'data_mgws': ds.data_vars['mgws'][:], # Northward GW surface stress
+				'data_z': ds.data_vars['z'][:], # Geopotential
+				'data_slor': ds.data_vars['slor'][:], # Slope of sub-gridscale orography
+				'data_sdor': ds.data_vars['sdor'][:], # Stddev of orography
+				'data_tcc': ds.data_vars['tcc'][:]} # Cloud area fraction
+			
+			# Simulated IR Cloud Fraction
+			andes_cloud = era5_data['data_tcc'].isel(time=slice(0,1)).isel(latitude=slice(160, 321)).isel(longitude=slice(40, 201))
+			z_era5_cloud = andes_cloud.values[0]
+			x_era5_cloud = np.arange(-80, -39.75, 0.25)
+			y_era5_cloud = np.arange(-80, -39.75, 0.25)
+			y_era5_cloud = y_era5_cloud[::-1]
+			x_era5_cloud, y_era5_cloud = np.meshgrid(x_era5_cloud, y_era5_cloud)
+			
+			# MSLP contour plot
+			andes_mslp = era5_data['data_msl'].isel(time=slice(0,1)).isel(latitude=slice(160, 321)).isel(longitude=slice(40, 201))
+			z_era5_mslp = andes_mslp.values[0]
+			x_era5_mslp = np.arange(-80, -39.75, 0.25)
+			y_era5_mslp = np.arange(-80, -39.75, 0.25)
+			y_era5_mslp = y_era5_mslp[::-1]
+			x_era5_mslp, y_era5_mslp = np.meshgrid(x_era5_mslp, y_era5_mslp)
+			
+			andes_slice = era5_data['data_anor'].isel(time=slice(0,1)).isel(latitude=slice(160, 321)).isel(longitude=slice(40, 201))
+			z_era5_map = andes_slice.values[0]
+			x_era5_map = np.arange(-80, -39.75, 0.25)
+			y_era5_map = np.arange(-80, -39.75, 0.25)
+			y_era5_map = y_era5_map[::-1]
+			x_era5_map, y_era5_map = np.meshgrid(x_era5_map, y_era5_map)
+			
+		# ~ print(era5_data['data_t']) # Diagnostics
+		# ==============================================================
 					
 		"""=========================================================="""
 		"""=======================Plotting==========================="""
 		"""=========================================================="""
 		os.chdir('..')
-		print(os.getcwd())
+		print("Current working directory:", os.getcwd())
 		os.chdir('Plots')
 		# Save data (toggle on and off)
 		# ~ savemat("data.mat", {'data':z})
@@ -517,7 +637,6 @@ for file in os.listdir(directory):
 		YYYY = str(filename)[6:10]
 		MM = str(filename)[11:13]
 
-		print(infile, '\n')
 		# Plotting data
 		# Initialise figure
 		fig = plt.figure()
@@ -541,7 +660,7 @@ for file in os.listdir(directory):
 			y_lim_min = (0 - (vert_res/2)) / 1000
 			y_lims = [y_lim_max, y_lim_min]
 			
-			# ======================= Pre ERA5 Scheme ======================== #
+			# ====================== S-G Filter Schemes ====================== #
 			fixnanswithmean(z) # Uses my own function 'fixnanswithmean'	
 			
 			# Test using Gaussian noise
@@ -556,29 +675,63 @@ for file in os.listdir(directory):
 			sg_upper += (1-(sg_upper % 2))
 			sg_lower = int(np.floor(5 * (1000/vert_res)))
 			sg_lower += (1-(sg_lower % 2))
-			print(sg_upper * vert_res, "m upper bound")
-			print(sg_lower * vert_res, "m lower bound")
-			z2 = savgol_filter(z, sg_upper, 2, axis = 0) # + Vertical S-G filter
-			z3 = savgol_filter(z, sg_lower, 2, axis = 0) # - Vertical S-G filter
-			# ~ z2 = savgol_filter(z, 15, 2, axis = 1) # Horizontal S-G filter
-			z = z3 - z2 # Return the perturbations
+			# ~ print(sg_upper * vert_res, "m upper bound")
+			# ~ print(sg_lower * vert_res, "m lower bound")
+			# ~ z2 = savgol_filter(z, sg_upper, 2, axis = 0) # + Vertical S-G filter
+			# ~ z3 = savgol_filter(z, sg_lower, 2, axis = 0) # - Vertical S-G filter
+			try:
+				z2a = savgol_filter(z, 25, 2, axis = 1) # Horizontal + S-G filter
+				z2b = savgol_filter(z, 5, 2, axis = 1) # Horizontal - S-G filter
+				# ~ z4 = savgol_filter(z, 21, 2, axis = 0) # Vertical S-G filter
+				# ~ z6a = ndimage.gaussian_filter1d(z, 0.5, axis = 1)
+				# ~ z6b = ndimage.gaussian_filter1d(z, 0.5, axis = 0)
+				# ~ z6 = (z6a+z6b)/2
+				# ~ z7a = ndimage.gaussian_filter1d(z, 1, axis = 1)
+				# ~ z7b = ndimage.gaussian_filter1d(z, 1, axis = 0)
+				# ~ z7 = (z7a+z7b)/2
+				# ~ z5 = (z2b+z4)/2
+			except:
+				# Return to programs directory
+				print("I tried the S-G filter and it failed................................................................................")
+				os.chdir('..')
+				os.chdir('Programs')
+				continue
+			# ~ z = z3 - z2
 			# ~ z = z1 - z2
-			# ======================= Pre ERA5 Scheme ======================== #
-			# ~ fixnanswithmean(data_obs)
-			z = data_obs - data_mod # Find perturbations relative to smoothed ERA5
+			# ~ z = z2b - z2a
+			# Boxcar smooth:
+			# ~ z = ndimage.uniform_filter(z, size=(2,2), mode = 'reflect')
+			# ================================================================= #
+			
+			# =================== Plot left-hand imshow plot ================== #
+			# Setting limits for colorbar
+			vminval = np.mean(z) - np.std(z)
+			vmaxval = np.mean(z) + np.std(z)
+			# ~ vminval, vmaxval = -50, -10 # Manually set vmin/vmax
+			# ~ vminval, vmaxval = -20, 20 # Settings for S-G Perts
+			
+			# Selecting required data
+			# ~ fixnanswithmean(data_mod)
+			# ~ z = data_obs - data_mod # Find perturbations relative to smoothed ERA5
 			# ~ z = data_mod
-			# ~ z = data_obs
+			z = data_obs
 						
-			# Plots using imshow
+			# Plot profiles using imshow
 			cs = plt.imshow(z, aspect='auto', cmap='RdBu_r', extent=[x_lims[0],
-				x_lims[1], y_lims[0], y_lims[1]], vmin=-150, vmax=150,
+				x_lims[1], y_lims[0], y_lims[1]], vmin=vminval, vmax=vmaxval,
 				interpolation='none')
 			mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap,
 				extent=[x_lims[0], x_lims[1], y_lims[0], y_lims[1]], interpolation=im_interp)
+			# Topography
+			topography = ax1.fill_between(x_topo, y_topo/1000, -10, color= '#987f52')
+			topography_line = ax1.plot(x_topo, y_topo/1000, color = 'k', linewidth=0.7)
+			ax1.set_xlim(x_lims[0], x_lims[1])
+			ax1.set_ylim(y_lims[0], y_lims[1])
 			ax1.xaxis_date() # Initialises date axis
 			date_form = dates.DateFormatter('%H:%M') # Sets date format
 			ax1.xaxis.set_major_formatter(date_form)
 			plt.gca().invert_yaxis() # Invert axis for imshow
+			# ================================================================= #
 
 		# Fix axes
 
@@ -593,14 +746,14 @@ for file in os.listdir(directory):
 
 		### Y axis
 		ax1.set_ylabel('Altitude / km')
-		ax1.set_yticks(np.arange(21))
-		ax1.yaxis.set_major_locator(plt.MaxNLocator(11))
-		ax1.yaxis.set_minor_locator(plt.MaxNLocator(21))
+		ax1.set_yticks(np.arange(25))
+		ax1.yaxis.set_major_locator(plt.MaxNLocator(13))
+		ax1.yaxis.set_minor_locator(plt.MaxNLocator(25))
 		# ~ ax1.tick_params(axis='y', which='minor', left=True) # Minor ticks
 		ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 			which='both')
 
-		# Satellite track plot
+		# ======================= Satellite Track plot ======================= #
 		ax2 = plt.subplot2grid((5,5), (0,3), colspan=2, rowspan=4)
 		ax2.yaxis.set_label_position("right")
 		ax2.yaxis.tick_right()
@@ -608,18 +761,48 @@ for file in os.listdir(directory):
 					llcrnrlon=bmleftlon,urcrnrlon=bmrightlon,resolution='i', ax=ax2)
 		# ~ map = Basemap(projection='cyl',llcrnrlat=-80,urcrnrlat=-40,\
 					# ~ llcrnrlon=-80,urcrnrlon=-40,resolution='i', ax=ax2)
-		map.fillcontinents(color='#ffdd99', lake_color='#cceeff')
+		map.fillcontinents(color='#ffdd99', lake_color='#cceeff', zorder = 2, alpha=1)
 		map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
-		map.drawcoastlines(linewidth=0.25, color='#666666')
+		# ~ map.etopo(zorder=2)
+		map.drawcoastlines(linewidth=0.25, color='#666666', zorder=5)
 		if region == 'andes':
-			map.drawmeridians([-70, -60, -50], linewidth=0.3)
-			map.drawparallels([-70, -60, -50], linewidth=0.3)
+			map.drawmeridians([-70, -60, -50], linewidth=0.3, zorder=5)
+			map.drawparallels([-70, -60, -50], linewidth=0.3, zorder=5)
 		elif region == 'azores':
-			map.drawmeridians([-60, -40, -20], linewidth=0.3)
-			map.drawparallels([20, 30, 40, 50, 60], linewidth=0.3)
+			map.drawmeridians([-60, -40, -20], linewidth=0.3, zorder=5)
+			map.drawparallels([20, 30, 40, 50, 60], linewidth=0.3, zorder=5)
+		
+		# Map topography
+		topo_levels = [25.100,200,500,1000,1500,2000,2500]
+		trial_levels = np.geomspace(150, 3100, num=15)
+		map_topo_iso = map.contour(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, colors='k', linewidths = 0.15, zorder=4, alpha = 0.4)
+		map_topo = map.contourf(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, cmap='copper_r', zorder=3, alpha = 1)
+		map_topo2 = map.contourf(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, cmap='Oranges', zorder=3, alpha = 0.4)
+		map_topo3 = map.contourf(x_map_topo, y_map_topo, z_map_topo, levels=topo_levels, cmap='Greys', zorder=3, alpha = 0.25)
+		# ERA5 Overlay
+		# ~ era5stuff = map.contourf(x_era5_map, y_era5_map, z_era5_map, cmap='RdBu_r',
+			# ~ levels=np.linspace(-150, 150, 26), vmin = -150, vmax = 150, zorder=2, alpha=0.8)
+		# ~ era5stuff = map.contourf(x_era5_map, y_era5_map, z_era5_map, cmap='Spectral_r',
+			# ~ zorder=2, alpha=0.8)
+		
+		# Simulated IR Cloud Fraction
+		era5_cloud = map.contourf(x_era5_cloud, y_era5_cloud, z_era5_cloud, cmap='Greys_r',
+			zorder=3, alpha=0.35)
+		
+		# MSLP plot
+		small_mslp_levels = np.arange(920, 1060, 2)
+		large_mslp_levels = np.arange(920, 1060, 10)
+		for i in large_mslp_levels: # Remove multiples of ten for better isobars
+			small_mslp_levels = np.delete(small_mslp_levels, np.where(small_mslp_levels == i))
+		small_era5_mslp = map.contour(x_era5_mslp, y_era5_mslp, z_era5_mslp/100, levels=small_mslp_levels, linewidths=0.2, colors='b', zorder=5, alpha = 1)
+		large_era5_mslp = map.contour(x_era5_mslp, y_era5_mslp, z_era5_mslp/100, levels=large_mslp_levels, linewidths=0.5, colors='b', zorder=5, alpha = 1)
+		ax2.clabel(large_era5_mslp, large_era5_mslp.levels, inline=True, fmt= '%d', fontsize=5)
+		# plt.colorbar(era5stuff, cax=ax2)
+		
+		# Track Plot
 		map.scatter(data_lon_new - 360, data_lat_new, marker = 'x', color = 'red',
-			s=0.3, zorder=2)
-		map.plot(data_lon_new - 360, data_lat_new, color = 'red', linewidth = '0.5')
+			s=0.3, zorder=6)
+		map.plot(data_lon_new - 360, data_lat_new, color = 'red', linewidth = '0.5', zorder=6)
 		midpointlonindex = int(np.floor(len(data_lon_new)/2))
 		midpointlatindex = int(np.floor(len(data_lat_new)/2))
 		# ~ map.quiver(data_lon[midpointlonindex]-360, data_lat[midpointlatindex],
@@ -652,14 +835,16 @@ for file in os.listdir(directory):
 			except:
 				continue
 			map.quiver(lon_loc, lat_loc, data_lat_new[idx-30] - data_lat_new[idx+30],
-				data_lon_new[idx+30] - data_lon_new[idx-30], angles='xy', color='black',
-				zorder=3, headaxislength=0, headlength=0, pivot='middle', units='xy')
-			ax2.annotate(str_time, (lon_loc+1, lat_loc+1), fontsize=6, zorder=5)
+				data_lon_new[idx+30] - data_lon_new[idx-30], angles='xy', color='k',
+				zorder=7, width = 0.5, headaxislength=0, headlength=0, pivot='middle', units='xy')
+			ax2.annotate(str_time, (lon_loc+1, lat_loc+1), fontsize=8, zorder=7, color = 'k', weight='demibold')
 			
 			# ~ a = ax1.xaxis.get_ticklabels()
 			# ~ print(text.Text(agg_filter=a))
 
 		# ~ map.plot([-70, -65], [-70, -67], color='k')
+
+		# ==================================================================== #
 
 		# Fix axes
 		if region == 'andes':
@@ -673,7 +858,9 @@ for file in os.listdir(directory):
 		ax2.set_aspect('auto') # Stretch map to fill subplot
 		for axis in ['top','bottom','left','right']: # Set axes thickness
 			ax1.spines[axis].set_linewidth(0.75)
+			ax1.spines[axis].set_zorder(10)
 			ax2.spines[axis].set_linewidth(0.75)
+			ax2.spines[axis].set_zorder(10)
 		
 		# Add colorbar to figure
 		fig.subplots_adjust(bottom=0.2, right=0.88, left=0.12)
@@ -682,7 +869,7 @@ for file in os.listdir(directory):
 			label='HLOS Rayleigh Wind Speed / ms$^{-1}$', cax=cbar_ax)
 
 		# Set figure title
-		print("This file is:", str(filename)[6:-3]) # Here: 2019-08-11_224235
+		print("\nThis file is:", str(filename)[6:-3]) # Here: 2019-08-11_224235
 		strdate = str(filename)[6:16]
 		print("strdate:", strdate)
 		strtime = str(filename)[17:19] + ':' + str(filename)[19:21] + ':' + \
@@ -702,7 +889,8 @@ for file in os.listdir(directory):
 		elif pc_or_im == 'im':
 			pngsavename += '_im_' + im_interp
 		pngsavename += '.png'
-		print(pngsavename)
+		print("pngsavename:", pngsavename)
+		print("Entering directories to save .png file")
 		enterdirectory(pc_or_im)
 		if pc_or_im == 'im':
 			enterdirectory(im_interp)
@@ -722,17 +910,25 @@ for file in os.listdir(directory):
 			# Enter corresponding MM directory
 			enterdirectory(MM)
 			
-			# ~ plt.savefig(pngsavename,dpi=300)
+			plt.savefig(pngsavename,dpi=300)
 		os.chdir('..')
 		
 		# Climb out of plot directory
 		os.chdir('..')
 		os.chdir('..')
-		plt.savefig('testme7_10kmmod2.png',dpi=300)
+		
+		# Return to programs directory
+		os.chdir('..')
+		os.chdir('Programs')
+		
+		# Access ERA5 Co-location directory
+		# ~ os.chdir('ERA5_Co-location')
+		# ~ plt.savefig(pngsavename, dpi=600)
+		# ~ os.chdir('..')
 		
 		# Time taken for the file
 		fduration = datetime.now() - fstartTime
-		print('That file took ', fduration, ' seconds')
+		print('\nThat file took ', fduration, ' seconds to analyse')
 		
 		# Reset after box completed
 		start_elmnt = 0
@@ -740,3 +936,7 @@ for file in os.listdir(directory):
 		complete_boxes += 1
 		
 		plt.close()
+
+# Time taken for the file
+pduration = datetime.now() - pstartTime
+print('\nThat program took ', pduration, ' seconds to run')
