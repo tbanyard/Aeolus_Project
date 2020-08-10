@@ -46,7 +46,7 @@ os.chdir('..')
 pstartTime = datetime.now()
 
 # Set desired global variables
-res = 1.25 # Resolution of density plot in degrees
+res = 5 # Resolution of density plot in degrees
 resrcp = 1/res # Resolution Reciprocal
 
 # Check that the input resolution is acceptable
@@ -81,12 +81,12 @@ data_itrn = np.asarray([[0 for _ in np.linspace(-180,180,num_lon)] \
 for _ in np.linspace(-90,90,num_lat)])
 np.set_printoptions(threshold=sys.maxsize)
 
-time.sleep(1000)
+# ~ time.sleep(1000)
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Jun2019/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Aug2019/'
 file_itrn = 0
 directory = os.fsencode(strdirectory)
 for file in sorted(os.listdir(directory)):
@@ -191,7 +191,7 @@ map = Basemap(projection='cyl',llcrnrlat=-90,urcrnrlat=90,\
 z = data_vars
 lons, lats = np.meshgrid(lon_grid, lat_grid)
 x, y = map(lons,lats)
-cs = plt.pcolormesh(x, y, z, cmap='RdBu_r', alpha=1, zorder=1)
+cs = plt.pcolormesh(x, y, z, cmap='RdBu_r', alpha=1, zorder=1, vmin=0, vmax=3500)
 
 map.drawcoastlines(linewidth=0.25, color='#666666')
 meridians = np.linspace(-135, 135, 7)
@@ -201,7 +201,7 @@ map.drawparallels(parallels, linewidth=0.3)
 ax.set_xticks(meridians)
 ax.set_yticks(parallels)
 
-np.save("varplottest3jun1.25.npy", data_vars, allow_pickle=True)
+np.save("aug2019_5deg_10-15km.npy", data_vars, allow_pickle=True)
 
 fig.colorbar(cs, cmap='RdBu_r', orientation='horizontal',
 			label='HLOS Rayleigh Wind Speed variance / (ms$^{-1}$)$^{2}$')
@@ -212,7 +212,7 @@ plt.title(str_plt_title)
 
 # Saving figure
 os.chdir('variances')
-plt.savefig('varplottest3jun1.25.png',dpi=300)
+plt.savefig('aug2019_5deg_10-15km.png',dpi=300)
 os.chdir('..')
 
 # Time taken for the file

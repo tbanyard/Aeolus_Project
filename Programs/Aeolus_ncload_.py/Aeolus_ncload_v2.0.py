@@ -685,9 +685,9 @@ for file in os.listdir(directory):
 			# ~ print(sg_lower * vert_res, "m lower bound")
 			# ~ z2 = savgol_filter(z, sg_upper, 2, axis = 0) # + Vertical S-G filter
 			# ~ z3 = savgol_filter(z, sg_lower, 2, axis = 0) # - Vertical S-G filter
-			# ~ try:
-				# ~ z2a = savgol_filter(z, 25, 2, axis = 1) # Horizontal + S-G filter
-				# ~ z2b = savgol_filter(z, 5, 2, axis = 1) # Horizontal - S-G filter
+			try:
+				z2a = savgol_filter(z, 25, 2, axis = 1) # Horizontal + S-G filter
+				z2b = savgol_filter(z, 5, 2, axis = 1) # Horizontal - S-G filter
 				# ~ z4 = savgol_filter(z, 21, 2, axis = 0) # Vertical S-G filter
 				# ~ z6a = ndimage.gaussian_filter1d(z, 0.5, axis = 1)
 				# ~ z6b = ndimage.gaussian_filter1d(z, 0.5, axis = 0)
@@ -696,14 +696,14 @@ for file in os.listdir(directory):
 				# ~ z7b = ndimage.gaussian_filter1d(z, 1, axis = 0)
 				# ~ z7 = (z7a+z7b)/2
 				# ~ z5 = (z2b+z4)/2
-			# ~ except:
+			except:
 				# Return to programs directory
-				# ~ os.chdir('..')
-				# ~ os.chdir('Programs')
-				# ~ continue
+				os.chdir('..')
+				os.chdir('Programs')
+				continue
 			# ~ z = z3 - z2
 			# ~ z = z1 - z2
-			# ~ z = z2b - z2a
+			z = z2b - z2a
 			# Boxcar smooth:
 			# ~ z = ndimage.uniform_filter(z, size=(2,2), mode = 'reflect')
 			# ================================================================= #
@@ -713,12 +713,12 @@ for file in os.listdir(directory):
 			vminval = np.mean(z) - np.std(z)
 			vmaxval = np.mean(z) + np.std(z)
 			# ~ vminval, vmaxval = -50, -10 # Manually set vmin/vmax
-			# ~ vminval, vmaxval = -20, 20 # Settings for S-G Perts
+			vminval, vmaxval = -20, 20 # Settings for S-G Perts
 			
 			# Selecting required data
 			# ~ fixnanswithmean(data_mod)
 			# ~ z = data_obs - data_mod # Find perturbations relative to smoothed ERA5
-			z = data_mod
+			# ~ z = data_mod
 			# ~ z = data_obs
 						
 			# Plot profiles using imshow
@@ -909,7 +909,7 @@ for file in os.listdir(directory):
 			# Enter corresponding MM directory
 			enterdirectory(MM)
 			
-			plt.savefig(pngsavename,dpi=300)
+			# ~ plt.savefig(pngsavename,dpi=300)
 			os.chdir('..')
 		else:
 			# Enter corresponding YYYY directory
@@ -918,7 +918,7 @@ for file in os.listdir(directory):
 			# Enter corresponding MM directory
 			enterdirectory(MM)
 			
-			plt.savefig(pngsavename,dpi=300)
+			# ~ plt.savefig(pngsavename,dpi=300)
 		os.chdir('..')
 		
 		# Climb out of plot directory
@@ -926,9 +926,9 @@ for file in os.listdir(directory):
 		os.chdir('..')
 		
 		# Access ERA5 Co-location directory
-		# ~ os.chdir('ERA5_Co-location')
-		# ~ plt.savefig(pngsavename, dpi=600)
-		# ~ os.chdir('..')
+		os.chdir('ERA5_Co-location')
+		plt.savefig(pngsavename, dpi=600)
+		os.chdir('..')
 		
 		# Return to programs directory
 		os.chdir('..')

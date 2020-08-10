@@ -63,7 +63,7 @@ os.chdir('..')
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read Aeolus netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Jun2020/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_Aug2020/'
 """ERA5 directory"""
 ERA5_dir = '/home/tpb38/PhD/Bath/ERA5/'
 
@@ -702,7 +702,7 @@ for file in os.listdir(directory):
 				# ~ z7 = (z7a+z7b)/2
 				# ~ z5 = (z2b+z4)/2
 			# ~ except:
-				# Return to programs directory
+				# ~ # Return to programs directory
 				# ~ os.chdir('..')
 				# ~ os.chdir('Programs')
 				# ~ continue
