@@ -54,7 +54,7 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'qbo-jul15th_10N-S.nc' # Specifies data file
+infile = strdirectory + 'qbo-aug12th.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -67,7 +67,7 @@ whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=cus
 whitehatchescmap = whitehatchescmap_r.reversed()
 
 # Start element: For 01 July 2019 = 140; 01 Dec 2019 = 293
-wks = 4 # Number of weeks following RBS change
+wks = 9 # Number of weeks following RBS change
 se = 293
 rbs_se = 629-se
 ee = rbs_se - 140 + wks*7
@@ -274,7 +274,7 @@ plt.text(dates.date2num(RBS_datechange)+2, 27, "New \nRBS")
 # ~ ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 	# ~ which='both')
 	
-plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$10$^{{\circ}}$ Latitude (5-day running mean) 2019-2020')
+plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$5$^{{\circ}}$ Latitude 2019-2020')
 
 # Add colorbar to figure
 fig.subplots_adjust(bottom=0.225, right=0.88, left=0.12)
@@ -291,7 +291,7 @@ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'filejul15th_new4.png'
+pngsavename = 'fileaug12th.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")
