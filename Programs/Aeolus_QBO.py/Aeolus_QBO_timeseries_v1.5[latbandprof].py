@@ -9,7 +9,7 @@ Aeolus data load from netCDF format for QBO test
 ---v1.3---Plotting my own version of this plot extended out to March----
 ---v1.4---Using generated netCDF file from v1.3-------------------------
 ---v1.5---Editing and improving plot------------------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[BRANCH]-This_is_a_working_branch_version_of_this_file--------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 

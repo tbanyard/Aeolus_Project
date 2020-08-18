@@ -6,7 +6,7 @@ Aeolus data load from netCDF format for QBO test
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Ascending/Descending Node Split-------------------------------
 ---v1.2---Daily_Means and creating .mat file for Neil-------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 

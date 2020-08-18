@@ -4,7 +4,7 @@ Aeolus data load from netCDF format for QBO test
 ========================================================================
 ------------------------------------------------------------------------
 ---v2.0---[1st PhD CODE REVAMP]-----------------------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 

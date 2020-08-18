@@ -8,7 +8,7 @@ Aeolus data load from netCDF format for QBO test
 ---v1.2---Daily_Means and creating .mat file for Neil-------------------
 ---v1.3---Plotting my own version of this plot extended out to March----
 ---v1.4---Using generated netCDF file from v1.3-------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 

@@ -9,7 +9,7 @@ Aeolus data load for Corwin's QBO .mat files
 ---v1.3---Creating 2D Test figure to see data gaps----------------------
 ---v1.4---Improving quality of maps-------------------------------------
 ---v1.5---Looping over height levels and days---------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .mat files converted from .nc files from the Aeolus database and 

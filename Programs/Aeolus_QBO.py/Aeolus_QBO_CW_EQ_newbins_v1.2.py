@@ -6,7 +6,7 @@ Aeolus data load for Corwin's QBO .mat files
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Testing, still with pcolormesh only---------------------------
 ---v1.2---Improving plot quality----------------------------------------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+----------[DEPRECATED]-There_is_a_newer_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .mat files converted from .nc files from the Aeolus database and 

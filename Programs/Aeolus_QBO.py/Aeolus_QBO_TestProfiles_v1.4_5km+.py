@@ -8,7 +8,8 @@ Aeolus data load from netCDF format for QBO test
 ---v1.2---Completed subplots with profile, fixing code------------------
 ---v1.3---Focusing on one or two Singapore profiles---------------------
 ---v1.4---Aug2020-Reusing code for different radiosonde launches--------
-----------[CURRENT]-This_is_the_current_version_of_this_file------------
+---v_5km+---Only plotting from 5km upwards, corrected altitude/pressure-
+----------[BRANCH]-This_is_a_working_branch_version_of_this_file--------
 ------------------------------------------------------------------------
 ========================================================================
 Reads .nc files converted from DBL files from the Aeolus database and 
