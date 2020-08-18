@@ -7,6 +7,7 @@ Aeolus data load from netCDF format for QBO test
 ---v1.1---Trimmed to look at the four equator passes of Jun 3rd---------
 ---v1.2---Completed subplots with profile, fixing code------------------
 ---v1.3---Focusing on one or two Singapore profiles---------------------
+---v1.4---Aug2020-Reusing code for different radiosonde launches--------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -42,8 +43,9 @@ mode = 'compute'
 # mode = 'plot'
 
 # Replace the below with the directory containing the AE netCDF files.
-ncdir = '/home/tim/Documents/Bath/NC_AEOLUS_DATA_JUN'
+ncdir = '/home/tim/Documents/Bath/NC_AEOLUS_DATA_AUG'
 
+"""============================Aeolus Data==========================="""
 # Find and read netCDF data
 ds = xr.open_mfdataset(ncdir + '/*.nc',
     combine = 'nested', concat_dim = 'time')
@@ -60,8 +62,10 @@ data = {
     'data_QC_Flag_Both': ds.data_vars['QC_Flag_Both'][:]
     }
 
-# Create a binary array which restricts to an equatorial band between 15N-15S    
-lat_band = xr.where(data['data_lat']<-10, 0, (xr.where(data['data_lat']>10, 0, 1)))
+# Create a binary array which restricts to a latitude band between 0N-2.5N
+lat_band = xr.where(data['data_lat']<0.5, 0, (xr.where(data['data_lat']>2, 0, 1)))
+# Do the same for a longitude range between 100E-105E (Mainly to separate orbits)
+lon_band = xr.where(data['data_lon']<100, 0, (xr.where(data['data_lon']>105, 0, 1)))
 
 # Applying QCs
 data['data_u_proj'] = xr.where(data['data_QC_Flag_Both'] == 0, -9999, (data['data_u_proj']))
@@ -69,11 +73,23 @@ data['data_u_proj'] = xr.where(data['data_QC_Flag_Both'] == 0, -9999, (data['dat
 # Below I cap u_proj using xr.where
 data['data_u_proj_capped'] = xr.where(data['data_u_proj']>250000, -9999, (data['data_u_proj']))
 
+# Toggle additional check to limit data to within 5 m/s of Radiosonde extremities
+data['data_u_proj_capped'] = xr.where(data['data_u_proj_capped'] > 2000, -9999, (xr.where(data['data_u_proj_capped'] < -4000, -9999, data['data_u_proj_capped'])))
+
 # Now restrict all arrays to be None (or -99999999) outside of the latitude band
 data['data_u_proj_capped_band'] = xr.where(lat_band==0, -9999, data['data_u_proj_capped'])
 data['data_lat_band'] = xr.where(lat_band==0, -9999, data['data_lat'])
 data['data_lon_band'] = xr.where(lat_band==0, -9999, data['data_lon'])
 data['data_alt_band'] = xr.where(lat_band==0, -9999, data['data_alt'])
+
+# Do the same outside of the longitude band
+data['data_u_proj_capped_band'] = xr.where(lon_band==0, -9999, data['data_u_proj_capped_band'])
+data['data_lat_band'] = xr.where(lon_band==0, -9999, data['data_lat_band'])
+data['data_lon_band'] = xr.where(lon_band==0, -9999, data['data_lon_band'])
+data['data_alt_band'] = xr.where(lon_band==0, -9999, data['data_alt_band'])
+
+printfullarrays()
+print(data['data_lon_band'].values)
 
 # Labelling of some important arrays for testing
 u_proj_2 = data['data_u_proj_capped'][lat_band.values]
@@ -81,18 +97,18 @@ lat_1 = data['data_lat'][:]
 lat_2 = data['data_lat'][lat_band.values]
 
 # Slicing to leave only final few orbits
-data['data_time'] = data['data_time'][810000:]
-data['data_lat_band'] = data['data_lat_band'][810000:]
-data['data_lon_band'] = data['data_lon_band'][810000:]
-data['data_alt_band'] = data['data_alt_band'][810000:]
-data['data_u_proj_capped_band'] = data['data_u_proj_capped_band'][810000:]
+data['data_time'] = data['data_time'][:]
+data['data_lat_band'] = data['data_lat_band'][:]
+data['data_lon_band'] = data['data_lon_band'][:]
+data['data_alt_band'] = data['data_alt_band'][:]
+data['data_u_proj_capped_band'] = data['data_u_proj_capped_band'][:] # [810000:]
 
 # Single pass
-data['data_time'] = data['data_time'][12657:12738]
-data['data_lat_band'] = data['data_lat_band'][12657:12738]
-data['data_lon_band'] = data['data_lon_band'][12657:12738]
-data['data_alt_band'] = data['data_alt_band'][12657:12738]
-data['data_u_proj_capped_band'] = data['data_u_proj_capped_band'][12657:12738]
+data['data_time'] = data['data_time'][:] # [12657:12738]
+data['data_lat_band'] = data['data_lat_band'][:]
+data['data_lon_band'] = data['data_lon_band'][:]
+data['data_alt_band'] = data['data_alt_band'][:]
+data['data_u_proj_capped_band'] = data['data_u_proj_capped_band'][:]
 
 # Test using xr.where to split into altitude segments
 
@@ -126,6 +142,7 @@ np_u_proj = np.copy(data['data_u_proj_capped_band'].values[:])
 data['data_alt_band'] = xr.where(data['data_alt_band'] == -9999, None, data['data_alt_band']) 
 # data['data_u_proj_capped_band'] = xr.where(data['data_u_proj_capped_band'] == -99999999, None, data['data_u_proj_capped_band'])
 
+"""======================Singapore Radiosonde Data==================="""
 # Read in Singapore Radiosonde Data
 # SR_pressure = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data.txt")[:, 0]
 # SR_wind_dir = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data.txt")[:, 1]
@@ -133,16 +150,16 @@ data['data_alt_band'] = xr.where(data['data_alt_band'] == -9999, None, data['dat
 # SR_u_wind = SR_wind_spd * np.sin(SR_wind_dir*np.pi/180)
 
 # Correct Radiosonde Data
-SR_pressure = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data_2020-06-04_0z.txt")[:, 2]
-SR_wind_dir = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data_2020-06-04_0z.txt")[:, 7]
-SR_wind_spd = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data_2020-06-04_0z.txt")[:, 8]
-SR_u_wind = SR_wind_spd * np.sin(SR_wind_dir*np.pi/180)
-
+SR_pressure = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data_2020-08-13_0z.txt")[:, 2]
+SR_wind_dir = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data_2020-08-13_0z.txt")[:, 7]
+SR_wind_spd = np.loadtxt("/home/tim/Documents/Bath/SNM00048698/SNM00048698-wind-data_2020-08-13_0z.txt")[:, 8]
+SR_u_wind = SR_wind_spd * np.sin(SR_wind_dir*np.pi/180) # Calculate u wind
 
 print("SR_pressure: ", SR_pressure)
 print("SR_wind_dir: ", SR_wind_dir)
 print("SR_wind_spd: ", SR_wind_spd)
 
+"""============================Plotting=============================="""
 # Plotting Imports
 import geopandas
 import geoplot
@@ -152,12 +169,12 @@ import matplotlib.gridspec as gridspec
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 import matplotlib
 
-# Plotting
+"""+++++++++++++++++++++++Geographical Map Plot++++++++++++++++++++++"""
 fig = plt.figure()
 gridspec.GridSpec(5,5)
 ax1 = plt.subplot2grid((5,5), (0,0), colspan=1, rowspan=5, projection=ccrs.PlateCarree(103.5))
 # ax1 = plt.subplot(111, projection=ccrs.PlateCarree(100.0))
-ax1.coastlines(resolution='10m', linewidth=1)
+ax1.coastlines(resolution='10m', linewidth=0.5)
 ax1.set_extent([103, 104, 0, 2], ccrs.PlateCarree())
 # ax1.add_feature(cfeature.OCEAN)
 ax1.add_feature(cfeature.COASTLINE)
@@ -169,6 +186,7 @@ ax1.add_feature(cfeature.COASTLINE)
 # )
 # geoplot.polyplot(world, extent=(100, -10, 105, 10), edgecolor='black')
 
+# Aeolus data positions on map
 ax1.scatter(data['data_lon_band'].values[:], data['data_lat_band'].values[:], marker='+', s=1, color='blue', zorder=1, transform=ccrs.PlateCarree())
 # plt.scatter(lat_1.values[:], lat_band.values[:], marker='x', s=0.5, color='black')
 
@@ -192,17 +210,25 @@ ax1.yaxis.set_visible(True)
 
 ax1.set_aspect('auto') # Stretch map to fill subplot
 
-# Profile Plot
+"""+++++++++++++++Radiosonde vs Aeolus profile plot++++++++++++++++++"""
 ax2 = plt.subplot2grid((5,5), (0,2), colspan=3, rowspan=5)
 
 # Convert m to km for altitude
-data['data_alt_band'] = xr.where(data['data_alt_band']==None, None, data['data_alt_band'].values/1000)
+printfullarrays()
+# data['data_alt_band'] = np.where(data['data_alt_band']==None, None, data['data_alt_band'].values/1000.0)
+values = data['data_alt_band'].values
+for i in range(len(data['data_alt_band'])):
+    if str(type(data['data_alt_band'].values[i]))[8:16] == 'NoneType':
+        values[i] = None
+    else:
+        values[i] = data['data_alt_band'].values[i]/1000.0
 bin_mids /= 1000
 
-# Convert cm/s to m/s for wind speed
+# Convert cm/s to m/s for wind speed for Aeolus data
 p /= 100
 
-ax2.plot(p[1:], bin_mids[1:], color='red')
+# Plotting mean Aeolus profile
+l_AE = ax2.plot(p[1:], bin_mids[1:], color='red', label='Aeolus Profile')
 ax2.set_ylabel('Altitude / km')
 ax2.set_yticks([0, 5, 10, 15, 20, 25])
 ax2.set_xlabel('Zonal Wind Speed / ms$^{-1}$')
@@ -212,7 +238,7 @@ ax2.set_xlim([-40,20])
 
 ax3 = ax2.twiny()
 # ax3 = plt.subplot2grid((5,5), (0,2), colspan=3, rowspan=5)
-ax3.scatter(data['data_time'].values[:], data['data_alt_band'].values[:], marker='+', s=1, color='blue', zorder=1)
+ax3.scatter(data['data_time'].values[:], values, marker='+', s=1, color='blue', zorder=1)
 date_form = dates.DateFormatter('%H:%M:%S') # Sets date format
 ax3.xaxis.set_major_formatter(date_form)
 ax3.xaxis.set_major_locator(plt.MaxNLocator(4)) # Maximum number of date ticks
@@ -235,7 +261,7 @@ winds = winds.interpolate_na(dim = ('pressure'), method = 'linear')
 print("winds: ", winds.values)
 
 ax4 = ax2.twinx()
-ax4.plot(winds.values[:], SR_pressure/100, color='green')
+l_RS = ax4.plot(winds.values[:], SR_pressure/100, color='green', label='Radiosonde Profile')
 ax4.invert_yaxis()
 ax4.set_yscale('log')
 ax4.set_ylabel('Pressure / hPa', rotation=270, labelpad=10)
@@ -243,6 +269,10 @@ ax4.set_yticks([1000, 500, 250, 100, 50, 30, 20, 10])
 ax4.set_yticklabels([1000, 500, 250, 100, 50, 30, 20, 10])
 ax4.set_ylim([1500,21])
 ax4.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+
+l_all = l_AE + l_RS
+labs = [l.get_label() for l in l_all]
+ax2.legend(l_all, labs, loc = 'upper left', fontsize = 'small', framealpha=0, frameon=False)
 
 # Finishing figure
 fig.suptitle("Aeolus Data for Singapore pass on 3rd June 2020 $\pm$10$^\circ$ about equator")
