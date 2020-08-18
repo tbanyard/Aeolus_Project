@@ -229,7 +229,7 @@ print("Shape of z: ", np.shape(z))
 # Creating netCDF file
 
 
-root = nc.Dataset('qbo-jul8th.nc', 'w', format = "NETCDF4")
+root = nc.Dataset('qbo-aug12th.nc', 'w', format = "NETCDF4")
 root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
 root.institution = \
 "University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
