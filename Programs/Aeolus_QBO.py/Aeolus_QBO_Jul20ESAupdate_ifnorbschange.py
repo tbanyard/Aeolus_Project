@@ -140,9 +140,15 @@ y_lims = [y_lim_max, y_lim_min]
 # ~ for dayidx in [352, 359, 366, 373]:
 # ~ for dayidx in [ee-21-4, ee-14-4, ee-7-4, ee-4]:
 p = [rbs_se-140+3+7*_ for _ in range(wks)]
-for dayidx in p:
-	for diff in [-3, -2, -1, 1, 2, 3]:
-		z[20:,dayidx+diff] = z[20:,dayidx]
+# ~ for dayidx in p:
+	# ~ for diff in [-3, -2, -1, 1, 2, 3]:
+		# ~ z[20:,dayidx+diff] = z[20:,dayidx]
+		
+z[21:, rbs_se-145:rbs_se-144] = None
+z[21:, rbs_se-142:rbs_se-141] = None
+z[21:, rbs_se-139:rbs_se-138] = None
+z[21:, rbs_se-136:rbs_se-135] = None
+z[21:, rbs_se-133:rbs_se-132] = None
 
 # Set NaNs to mean and create binary array of NaNs.
 isnanarray = np.isnan(z)
@@ -156,7 +162,8 @@ for xidx in range(len(isnanarray)):
 		else:
 			hatcharray[xidx][yidx] = 0
 
-hatcharray[22:27,rbs_se-140:] = 0 # Unmask up to 26km after RBS change
+hatcharray[22:27,rbs_se-130:]=1
+# ~ hatcharray[22:27,rbs_se-140:] = 0 # Unmask up to 26km after RBS change
 hatcharray[23:27,rbs_se-140-19:rbs_se-140+2] = 1
 hatcharray = ndimage.uniform_filter(hatcharray, size=(1,5), mode = 'reflect')
 hatcharray = savgol_filter(hatcharray, 27, 2, axis = 1)
@@ -173,14 +180,17 @@ for xidx in range(len(z[0])):
 # ~ fixnanswithmean(z)
 
 # Apply filters separately above 20km before and after RBS change
-z[20:,:rbs_se-140] = ndimage.uniform_filter(z[20:,:rbs_se-140], size=(1,10), mode = 'reflect')
-z[20:,:rbs_se-140] = savgol_filter(z[20:,:rbs_se-140], 5, 2, axis = 1) # S-G filter
+# ~ z[20:,:rbs_se-140] = ndimage.uniform_filter(z[20:,:rbs_se-140], size=(1,10), mode = 'reflect')
+# ~ z[20:,:rbs_se-140] = savgol_filter(z[20:,:rbs_se-140], 5, 2, axis = 1) # S-G filter
 
-z[20:,rbs_se-140:] = ndimage.uniform_filter(z[20:,rbs_se-140:], size=(1,10), mode = 'reflect')
-z[20:,rbs_se-140:] = savgol_filter(z[20:,rbs_se-140:], 5, 2, axis = 1) # S-G filter
+# ~ z[20:,rbs_se-140:] = ndimage.uniform_filter(z[20:,rbs_se-140:], size=(1,10), mode = 'reflect')
+# ~ z[20:,rbs_se-140:] = savgol_filter(z[20:,rbs_se-140:], 5, 2, axis = 1) # S-G filter
 
-z[:20,:] = ndimage.uniform_filter(z[:20,:], size=(1,10), mode = 'reflect')
-z[:20,:] = savgol_filter(z[:20,:], 5, 2, axis = 1) # S-G filter
+# ~ z[:20,:] = ndimage.uniform_filter(z[:20,:], size=(1,10), mode = 'reflect')
+# ~ z[:20,:] = savgol_filter(z[:20,:], 5, 2, axis = 1) # S-G filter
+
+z[:,:] = ndimage.uniform_filter(z[:,:], size=(1,10), mode = 'reflect')
+z[:,:] = savgol_filter(z[:,:], 5, 2, axis = 1) # S-G filter
 
 if interp == True:
 	# 2D interpolation to round edges
@@ -291,7 +301,7 @@ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'filesep7th_v3.png'
+pngsavename = 'filesep7th_norbschange.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")
