@@ -50,9 +50,11 @@ os.chdir('..')
 
 # cmaps
 qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap7'), N=265)
+whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=customcolormaps('whitehatches'), N=265)
+whitehatchescmap = whitehatchescmap_r.reversed()
 
 strdirectory = '/home/tpb38/PhD/Bath/AIRS/3d_airs_2019/207/'
-filename = 'airs_2019_207_055.nc'
+filename = 'airs_2019_207_190.nc'
 infile = strdirectory + str(filename) # Specifies data file
 data = nc.Dataset(infile)
 
@@ -105,39 +107,79 @@ if proj == 'cyl':
 	# Plotting
 	# ~ cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap='RdBu_r', zorder=2, vmin = 180, vmax = 230, levels=np.linspace(180,230,51))
 	cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
-
-# Map projections
-pcyl = pyproj.Proj(init="epsg:4326")
-plcc = pyproj.Proj("+proj=lcc +lon_0=-100 +lat_0=-80 +lat_1=-45 +lat_2=-65")
-data_lon, data_lat = pyproj.transform(pcyl, plcc, data_lon, data_lat)
+	
+	# Fix axes
+	ax1.set_xticks([-100,-90,-80, -70, -60, -50])
+	ax1.set_yticks([-70, -60, -50, -40])
+	ax1.set_xlabel('Longitude / deg')
+	ax1.set_ylabel('Latitude / deg')
+	ax1.set_aspect('auto') # Stretch map to fill subplot
+	for axis in ['top','bottom','left','right']: # Set axes thickness
+		ax1.spines[axis].set_linewidth(0.75)
 
 if proj == 'lcc':
-	map = Basemap(width=9000000,height=7000000,
+	# Create plot border mask
+	border_lons = np.arange(-120, 0.01, 0.01)
+	border_lats = np.arange(-80, -29.99, 0.01)
+	border_lons, border_lats = np.meshgrid(border_lons, border_lats)
+	box = np.where(border_lats<-70.05, 0, (np.where(border_lats>-39.95, 0,
+		(np.where(border_lons>-49.95, 0, (np.where(border_lons<-90.05, 0, 1)))))))
+	
+	# Plot basemap
+	map = Basemap(width=3450000,height=3560000,
 				rsphere=(6378137.00,6356752.3142),\
 				resolution='l',area_thresh=250.,projection='lcc',\
 				lat_1=-45.,lat_2=-65,lat_0=-55,lon_0=-70.)
-
-	map.drawcoastlines(linewidth=0.25, color='black', zorder=3)
-	map.drawmeridians(np.linspace(-160, 90, 26), linewidth=0.3)
-	map.drawparallels(np.linspace(-70, -20, 6), linewidth=0.3)
+	projstring = map.proj4string
+	
+	# Transforming data latitudes and longitudes to LCC
+	pcyl = pyproj.Proj(init="epsg:4326")
+	plcc = pyproj.Proj(projstring)
+	data_lon, data_lat = pyproj.transform(pcyl, plcc, data_lon, data_lat)
+	
+	# Transforming border mask latitudes and longitudes to LCC
+	border_lons, border_lats = pyproj.transform(pcyl, plcc, border_lons, border_lats)
 
 	# Plotting
 	# ~ cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap='RdBu_r', zorder=2, vmin = 180, vmax = 230, levels=np.linspace(180,230,51))
 	cs = map.contourf(data_lon, data_lat, data_temp[:,:,10], cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
+	cs2 = map.contourf(border_lons, border_lats, box, cmap = whitehatchescmap_r, zorder=4)
+	
+	for axis in ['top','bottom','left','right']: # Set axes thickness
+		ax1.spines[axis].set_linewidth(0)
+		
+	# Map cosmetics
+	map.drawcoastlines(linewidth=0.25, color='black', zorder=3)
+	map.drawmeridians(np.linspace(-160, 90, 26), linewidth=0.3)
+	map.drawparallels(np.linspace(-70, -20, 6), linewidth=0.3)
+	# Map edges
+	map.drawmeridians([-90,-50], linewidth=1, zorder=3, dashes=(None,None))
+	map.drawparallels([-40,-70], linewidth=1, zorder=3, dashes=(None,None))
+	
+	
+	# Labelling meridians
+	meridians_x = np.arange(-90, -40, 10)
+	meridians_y = np.full(len(meridians_x), -70)
+	meridian_labels_x, meridian_labels_y = pyproj.transform(pcyl, plcc, meridians_x, meridians_y)
+	for i in range(len(meridians_x)):
+		plt.annotate(str(abs(meridians_x[i]))+"$\!^\circ\!$"+"W", xy=(meridian_labels_x[i], meridian_labels_y[i]), xytext=(meridian_labels_x[i]-175000, meridian_labels_y[i]-175000), zorder = 5, fontsize=8)
+		
+	# Labelling parallels
+	parallels_y = np.arange(-70, -30, 10)
+	parallels_x = np.full(len(parallels_y), -90)
+	parallel_labels_x, parallel_labels_y = pyproj.transform(pcyl, plcc, parallels_x, parallels_y)
+	for i in range(len(parallels_y)):
+		plt.annotate(str(abs(parallels_y[i]))+"$\!^\circ\!$"+"S", xy=(parallel_labels_x[i], parallel_labels_y[i]), xytext=(parallel_labels_x[i]-375000, parallel_labels_y[i]-25000), zorder = 5, fontsize=8)
+	
+	# ~ lccxlim_0, lccylim_0 = pyproj.transform(pcyl, plcc, -90, -70)
+	# ~ lccxlim_1, lccylim_1 = pyproj.transform(pcyl, plcc, -40, -40)
+	# ~ ax1.set_xlim(lccxlim_0, lccxlim_1)
+	# ~ ax1.set_ylim(lccylim_0, lccylim_1)
 	
 # ~ crs_cyl = pyproj.CRS(proj='cyl', h=sat_h, lon_0=sat_lon, sweep=sat_sweep)
 # ~ crs_lcc = pyproj.CRS(proj='lcc', lat_0=22, lon_0=-83, lat_1=33, lat_2=45)
 # ~ transformer = pyproj.Transformer.from_crs(crs_geos, crs_lcc)
 # ~ lons, lats = transformer.transform(XX, YY)
-
-# Fix axes
-ax1.set_xticks([-100,-90,-80, -70, -60, -50])
-ax1.set_yticks([-70, -60, -50, -40])
-ax1.set_xlabel('Longitude / deg')
-ax1.set_ylabel('Latitude / deg')
-ax1.set_aspect('auto') # Stretch map to fill subplot
-for axis in ['top','bottom','left','right']: # Set axes thickness
-	ax1.spines[axis].set_linewidth(0.75)
 
 # Title
 plt.title('AIRS granule 55 for 2019-07-26 at 30 km')
@@ -150,10 +192,8 @@ cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.025])
 fig.colorbar(cs, cmap=qbocmap, orientation='horizontal',
 	label='Temperature / K', cax=cbar_ax, ticks=np.linspace(-15,15,7))
 
-
-
 # Saving figure
-plt.savefig('testAIRS.png',dpi=300)
+plt.savefig('testAIRS.png',dpi=600)
 
 plt.close()
 
