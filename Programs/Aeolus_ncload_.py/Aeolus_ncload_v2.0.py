@@ -57,13 +57,16 @@ sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
 from phdfunctions import *
 from functions import *
 
+# matplotlib
+matplotlib.rcParams['axes.unicode_minus'] = False
+
 # Change current working directory to parent directory
 os.chdir('..')
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another
 """Find directory and read Aeolus netCDF data"""
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC4_FullQC/'
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus/NC_FullQC_repro/'
 """ERA5 directory"""
 ERA5_dir = '/home/tpb38/PhD/Bath/ERA5/'
 

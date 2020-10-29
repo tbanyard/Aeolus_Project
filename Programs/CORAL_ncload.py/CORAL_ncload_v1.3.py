@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-AIRS data load from netCDF format
+CORAL data load from netCDF format
 ========================================================================
 ------------------------------------------------------------------------
 ---v1.0---Initial_File--------------------------------------------------
----v1.1---Additional Flexibility and uses the Lambert conformal conic---
-----------projection.
+---v1.1---Timeseries using qbocmap and raw data-------------------------
+---v1.2---Improving plot------------------------------------------------
+---v1.3---Time domain flexibility and improved appearance for fig2 GRL--
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
-Reads .nc files of AIRS data from UBPC-2027://media/GWR/AIRS/
+Reads .nc files sent by Bernd Kaifler from the CORAL lidar in Argentina.
 ========================================================================
 """
 
@@ -34,10 +35,9 @@ from scipy.io import savemat
 from scipy.signal import savgol_filter, butter
 import scipy.ndimage as ndimage
 from itertools import groupby
-from mpl_toolkits.basemap import Basemap, pyproj
+from mpl_toolkits.basemap import Basemap
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import random
-import matplotlib
 
 # Import from functions file
 import sys
@@ -49,172 +49,7 @@ from functions import *
 # Change current working directory to parent directory
 os.chdir('..')
 
-# CODE BEGIN: 15/10/2020 ===================================================================================================================================================================================
-
-# cmaps
-qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap7'), N=265)
-whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=customcolormaps('whitehatches'), N=265)
-whitehatchescmap = whitehatchescmap_r.reversed()
-
-# matplotlib
-matplotlib.rcParams['axes.unicode_minus'] = False
-
-strdirectory = '/home/tpb38/PhD/Bath/AIRS/3d_airs_2019/207/'
-filename = 'airs_2019_207_190.nc'
-infile = strdirectory + str(filename) # Specifies data file
-data = nc.Dataset(infile)
-
-# Longitude
-data_lon = data.variables['l1_lon'][:]
-# Latitude
-data_lat = data.variables['l1_lat'][:]
-# Altitude
-data_alt = data.variables['ret_z'][:]
-# Temperature
-data_temp = data.variables['ret_temp'][:]
-
-# ~ print("data_alt: ", data_alt)
-# ~ print("shape of data_lon: ", np.shape(data_lon))
-# ~ print("shape of data_lat: ", np.shape(data_lat))
-# ~ print("shape of data_alt: ", np.shape(data_alt))
-# ~ print("shape of data_temp: ", np.shape(data_temp))
-
-data.close()
-
-"""Calculating perturbations"""
-data_temp2 = savgol_filter(data_temp, 55, 2, axis = 1)
-data_temp = data_temp - data_temp2
-data_temp = ndimage.gaussian_filter(data_temp, sigma=0.75, order=0)
-
-"""=========================================================="""
-"""=======================Plotting==========================="""
-"""=========================================================="""
-os.chdir('..')
-print(os.getcwd())
-os.chdir('Plots')
-os.chdir('AIRS')
-
-# Initialise figure
-fig = plt.figure()
-ax1 = fig.add_subplot(1, 1, 1)
-
-# Plotting map
-proj = 'lcc'
-if proj == 'cyl':
-	bmlowlat, bmupperlat, bmleftlon, bmrightlon = -70, -40, -100, -50
-	map = Basemap(projection='cyl',llcrnrlat=bmlowlat,urcrnrlat=bmupperlat,\
-				llcrnrlon=bmleftlon,urcrnrlon=bmrightlon,resolution='i', ax=ax1)
-	# ~ map.fillcontinents(color='#ffdd99', lake_color='#cceeff')
-	# ~ map.drawmapboundary(linewidth=0.75, fill_color='#cceeff')
-	map.drawcoastlines(linewidth=0.25, color='black', zorder=3)
-	map.drawmeridians([-90,-80,-70, -60, -50], linewidth=0.3)
-	map.drawparallels([-70, -60, -50], linewidth=0.3)
-
-	# Plotting
-	# ~ cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap='RdBu_r', zorder=2, vmin = 180, vmax = 230, levels=np.linspace(180,230,51))
-	cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
-	
-	# Fix axes
-	ax1.set_xticks([-100,-90,-80, -70, -60, -50])
-	ax1.set_yticks([-70, -60, -50, -40])
-	ax1.set_xlabel('Longitude / deg')
-	ax1.set_ylabel('Latitude / deg')
-	ax1.set_aspect('auto') # Stretch map to fill subplot
-	for axis in ['top','bottom','left','right']: # Set axes thickness
-		ax1.spines[axis].set_linewidth(0.75)
-
-if proj == 'lcc':
-	# Create plot border mask
-	border_lons = np.arange(-120, 0.01, 0.01)
-	border_lats = np.arange(-80, -29.99, 0.01)
-	border_lons, border_lats = np.meshgrid(border_lons, border_lats)
-	box = np.where(border_lats<-70.05, 0, (np.where(border_lats>-39.95, 0,
-		(np.where(border_lons>-49.95, 0, (np.where(border_lons<-90.05, 0, 1)))))))
-	
-	# Plot basemap
-	map = Basemap(width=3450000,height=3560000,
-				rsphere=(6378137.00,6356752.3142),\
-				resolution='l',area_thresh=250.,projection='lcc',\
-				lat_1=-45.,lat_2=-65,lat_0=-55,lon_0=-70.)
-	projstring = map.proj4string
-	
-	# Transforming data latitudes and longitudes to LCC
-	pcyl = pyproj.Proj(init="epsg:4326")
-	plcc = pyproj.Proj(projstring)
-	data_lon, data_lat = pyproj.transform(pcyl, plcc, data_lon, data_lat)
-	
-	# Transforming border mask latitudes and longitudes to LCC
-	border_lons, border_lats = pyproj.transform(pcyl, plcc, border_lons, border_lats)
-
-	# Plotting
-	# ~ cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap='magma', zorder=2, vmin = 180, vmax = 230, levels=np.linspace(180,230,51))
-	cs = map.contourf(data_lon, data_lat, data_temp[:,:,10], cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
-	cs2 = map.contourf(border_lons, border_lats, box, cmap = whitehatchescmap_r, zorder=4)
-	
-	for axis in ['top','bottom','left','right']: # Set axes thickness
-		ax1.spines[axis].set_linewidth(0)
-		
-	# Map cosmetics
-	map.drawcoastlines(linewidth=0.25, color='black', zorder=3)
-	map.drawmeridians(np.linspace(-160, 90, 26), linewidth=0.3)
-	map.drawparallels(np.linspace(-70, -20, 6), linewidth=0.3)
-	# Map edges
-	map.drawmeridians([-90,-50], linewidth=1, zorder=3, dashes=(None,None))
-	map.drawparallels([-40,-70], linewidth=1, zorder=3, dashes=(None,None))
-	
-	
-	# Labelling meridians
-	meridians_x = np.arange(-90, -40, 10)
-	meridians_y = np.full(len(meridians_x), -70)
-	meridian_labels_x, meridian_labels_y = pyproj.transform(pcyl, plcc, meridians_x, meridians_y)
-	for i in range(len(meridians_x)):
-		plt.annotate(str(abs(meridians_x[i]))+"$\!^\circ\!$"+"W", xy=(meridian_labels_x[i], meridian_labels_y[i]), xytext=(meridian_labels_x[i]-175000, meridian_labels_y[i]-175000), zorder = 5, fontsize=10)
-		
-	# Labelling parallels
-	parallels_y = np.arange(-70, -30, 10)
-	parallels_x = np.full(len(parallels_y), -90)
-	parallel_labels_x, parallel_labels_y = pyproj.transform(pcyl, plcc, parallels_x, parallels_y)
-	for i in range(len(parallels_y)):
-		plt.annotate(str(abs(parallels_y[i]))+"$\!^\circ\!$"+"S", xy=(parallel_labels_x[i], parallel_labels_y[i]), xytext=(parallel_labels_x[i]-375000, parallel_labels_y[i]-25000), zorder = 5, fontsize=10)
-	
-	# ~ lccxlim_0, lccylim_0 = pyproj.transform(pcyl, plcc, -90, -70)
-	# ~ lccxlim_1, lccylim_1 = pyproj.transform(pcyl, plcc, -40, -40)
-	# ~ ax1.set_xlim(lccxlim_0, lccxlim_1)
-	# ~ ax1.set_ylim(lccylim_0, lccylim_1)
-	
-# ~ crs_cyl = pyproj.CRS(proj='cyl', h=sat_h, lon_0=sat_lon, sweep=sat_sweep)
-# ~ crs_lcc = pyproj.CRS(proj='lcc', lat_0=22, lon_0=-83, lat_1=33, lat_2=45)
-# ~ transformer = pyproj.Transformer.from_crs(crs_geos, crs_lcc)
-# ~ lons, lats = transformer.transform(XX, YY)
-
-# Title
-# ~ plt.title('AIRS granule 55 for 2019-07-26 at 30 km')
-
-# Add colorbar to figure
-"""fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
-cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.025])
-# ~ fig.colorbar(cs, cmap='magma', orientation='horizontal',
-	# ~ label='Temperature / K', cax=cbar_ax, ticks=np.linspace(180,230,11))
-fig.colorbar(cs, cmap=qbocmap, orientation='horizontal',
-	label='Temperature Perturbation / K', cax=cbar_ax, ticks=np.linspace(-15,15,7))"""
-	
-# Vertical colorbar
-fig.subplots_adjust(bottom=0.05, top=0.95, right=0.88, left=0.12)
-cbar_ax = fig.add_axes([0.88, 0.1, 0.0125, 0.78])
-fig.colorbar(cs, cmap=qbocmap, orientation='vertical',
-	label='Temperature Perturbation / K', cax=cbar_ax, ticks=np.linspace(-15,15,7))
-cbar_ax.tick_params(labelsize=7) 
-cbar_ax.set_ylabel('Temperature Perturbation / K', fontsize=7)
-
-# Saving figure
-plt.savefig('testAIRS.png',dpi=1200)
-
-plt.close()
-
-sys.exit()
-
-# CODE END: 15/10/2020 ===================================================================================================================================================================================
-
+# CODE BEGIN: 13/10/2020 ===================================================================================================================================================================================
 
 # cmaps
 qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap7'), N=265)
@@ -249,7 +84,7 @@ print(time_units)
 # Converted time
 data_time = nc.num2date(data.variables['time'][:],\
 calendar = 'standard', units = time_units)
-# ~ print(data_time)
+print(data_time)
 
 np.set_printoptions(threshold=sys.maxsize)
 # ~ print(data_temp)
@@ -303,11 +138,13 @@ ax1.xaxis.set_major_formatter(date_form)
 plt.title('CORAL lidar timeseries for 2019-07-25 - 2019-07-26')
 ax1.set_ylabel('Altitude / km')
 ax1.set_yticks(np.linspace(10,100,10))
+ax1.yaxis.set_ticks_position('both')
+ax1.tick_params(axis='y', which='both', labelleft='on', labelright='on')
 ax1.set_xlabel('Time')
-ax1.xaxis.grid(True, which='minor')
-ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='x',
+ax1.xaxis.grid(True, which='minor', color='gray', linestyle='--', linewidth=0.4)
+ax1.grid(color='gray', linestyle = '--', linewidth = 0.4, axis='x',
 			which='both')
-ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
+ax1.grid(color='gray', linestyle = '--', linewidth = 0.4, axis='y',
 			which='both')
 			
 # Ensure the number of date ticks is sensible
@@ -320,13 +157,13 @@ fig.colorbar(cs, cmap='magma', orientation='horizontal',
 	label='Temperature / K', cax=cbar_ax)
 			
 # Saving figure
-plt.savefig('testCORAL.png',dpi=300)
+plt.savefig('testCORALv1.3.png',dpi=300)
 
 plt.close()
 
 """Perturbations"""
 # Initialise figure
-fig = plt.figure()
+fig = plt.figure(figsize=(10,5))
 ax1 = fig.add_subplot(1, 1, 1)
 
 # Set z
@@ -341,7 +178,7 @@ print(np.nanmax(z))
 
 # Plotting
 cs = plt.imshow(z, aspect='auto', cmap=qbocmap, extent=[x_lims[0],
-				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
+				x_lims[1], y_lims[0], y_lims[1]], vmin=-15, vmax=15,
 				interpolation='none')
 
 # Date axis				
@@ -351,9 +188,11 @@ ax1.xaxis.set_major_formatter(date_form)
 # ~ plt.gca().invert_yaxis() # Invert axis for imshow
 
 # Cosmetics
-plt.title('CORAL lidar timeseries for 2019-07-25 - 2019-07-26')
+# ~ plt.title('CORAL lidar timeseries for 2019-07-25 - 2019-07-26')
 ax1.set_ylabel('Altitude / km')
 ax1.set_yticks(np.linspace(10,100,10))
+ax1.yaxis.set_ticks_position('both')
+ax1.tick_params(axis='y', which='both', labelleft='on', labelright='on')
 ax1.set_xlabel('Time')
 ax1.xaxis.grid(True, which='minor')
 ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='x',
@@ -363,15 +202,21 @@ ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 			
 # Ensure the number of date ticks is sensible
 ax1.xaxis.set_minor_locator(dates.MinuteLocator(byminute=0))
+ax1.set_xlim([datetime(2019, 7, 26, 3, 0, 0), datetime(2019, 7, 26, 19, 0, 0)])
 
 # Add colorbar to figure
-fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
+"""fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
 cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.025])
 fig.colorbar(cs, cmap=qbocmap, orientation='horizontal',
-	label='Temperature / K', cax=cbar_ax)
+	label='Temperature Perturbation / K', cax=cbar_ax)"""
 			
 # Saving figure
-plt.savefig('testCORAL2.png',dpi=300)
+plt.savefig('testCORAL2v1.3.png',dpi=1200)
+
+
+sys.exit()
+
+# CODE END: 13/10/2020 ===================================================================================================================================================================================
 
 # Here I need to iterate through all. nc files and plot all of them
 # into jpgs to view one after another

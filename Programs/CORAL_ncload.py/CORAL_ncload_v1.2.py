@@ -43,6 +43,7 @@ sys.path.append('/home/tpb38/PhD/Bath/')
 sys.path.append('/home/tpb38/PhD/Bath/Aeolus_Project/Programs/')
 from phdfunctions import *
 from functions import *
+import matplotlib
 
 # Change current working directory to parent directory
 os.chdir('..')
@@ -51,6 +52,8 @@ os.chdir('..')
 
 # cmaps
 qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('QBOcmap7'), N=265)
+
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 strdirectory = '/home/tpb38/PhD/Bath/CORAL_v12/'
 filename = '20190725-2110_T15Z900.nc'
@@ -136,6 +139,8 @@ ax1.xaxis.set_major_formatter(date_form)
 plt.title('CORAL lidar timeseries for 2019-07-25 - 2019-07-26')
 ax1.set_ylabel('Altitude / km')
 ax1.set_yticks(np.linspace(10,100,10))
+ax1.yaxis.set_ticks_position('both')
+ax1.tick_params(axis='y', which='both', labelleft='on', labelright='on')
 ax1.set_xlabel('Time')
 ax1.xaxis.grid(True, which='minor')
 ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='x',
@@ -174,7 +179,7 @@ print(np.nanmax(z))
 
 # Plotting
 cs = plt.imshow(z, aspect='auto', cmap=qbocmap, extent=[x_lims[0],
-				x_lims[1], y_lims[0], y_lims[1]], vmin=-20, vmax=20,
+				x_lims[1], y_lims[0], y_lims[1]], vmin=-15, vmax=15, 
 				interpolation='none')
 
 # Date axis				
@@ -187,6 +192,8 @@ ax1.xaxis.set_major_formatter(date_form)
 plt.title('CORAL lidar timeseries for 2019-07-25 - 2019-07-26')
 ax1.set_ylabel('Altitude / km')
 ax1.set_yticks(np.linspace(10,100,10))
+ax1.yaxis.set_ticks_position('both')
+ax1.tick_params(axis='y', which='both', labelleft='on', labelright='on')
 ax1.set_xlabel('Time')
 ax1.xaxis.grid(True, which='minor')
 ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='x',
@@ -201,7 +208,8 @@ ax1.xaxis.set_minor_locator(dates.MinuteLocator(byminute=0))
 fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
 cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.025])
 fig.colorbar(cs, cmap=qbocmap, orientation='horizontal',
-	label='Temperature / K', cax=cbar_ax)
+	label='Temperature Perturbation / K', cax=cbar_ax,
+	extend='both')
 			
 # Saving figure
 plt.savefig('testCORAL2.png',dpi=300)

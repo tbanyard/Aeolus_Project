@@ -6,6 +6,7 @@ AIRS data load from netCDF format
 ---v1.0---Initial_File--------------------------------------------------
 ---v1.1---Additional Flexibility and uses the Lambert conformal conic---
 ----------projection.
+---v1.2-----------------------------------------------------------------
 ----------[CURRENT]-This_is_the_current_version_of_this_file------------
 ------------------------------------------------------------------------
 ========================================================================
@@ -37,7 +38,6 @@ from itertools import groupby
 from mpl_toolkits.basemap import Basemap, pyproj
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import random
-import matplotlib
 
 # Import from functions file
 import sys
@@ -56,11 +56,8 @@ qbocmap = LinearSegmentedColormap('QBOcustomcmap', segmentdata=customcolormaps('
 whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=customcolormaps('whitehatches'), N=265)
 whitehatchescmap = whitehatchescmap_r.reversed()
 
-# matplotlib
-matplotlib.rcParams['axes.unicode_minus'] = False
-
 strdirectory = '/home/tpb38/PhD/Bath/AIRS/3d_airs_2019/207/'
-filename = 'airs_2019_207_190.nc'
+filename = 'airs_2019_207_055.nc'
 infile = strdirectory + str(filename) # Specifies data file
 data = nc.Dataset(infile)
 
@@ -168,14 +165,14 @@ if proj == 'lcc':
 	meridians_y = np.full(len(meridians_x), -70)
 	meridian_labels_x, meridian_labels_y = pyproj.transform(pcyl, plcc, meridians_x, meridians_y)
 	for i in range(len(meridians_x)):
-		plt.annotate(str(abs(meridians_x[i]))+"$\!^\circ\!$"+"W", xy=(meridian_labels_x[i], meridian_labels_y[i]), xytext=(meridian_labels_x[i]-175000, meridian_labels_y[i]-175000), zorder = 5, fontsize=10)
+		plt.annotate(str(abs(meridians_x[i]))+"$\!^\circ\!$"+"W", xy=(meridian_labels_x[i], meridian_labels_y[i]), xytext=(meridian_labels_x[i]-175000, meridian_labels_y[i]-175000), zorder = 5, fontsize=8)
 		
 	# Labelling parallels
 	parallels_y = np.arange(-70, -30, 10)
 	parallels_x = np.full(len(parallels_y), -90)
 	parallel_labels_x, parallel_labels_y = pyproj.transform(pcyl, plcc, parallels_x, parallels_y)
 	for i in range(len(parallels_y)):
-		plt.annotate(str(abs(parallels_y[i]))+"$\!^\circ\!$"+"S", xy=(parallel_labels_x[i], parallel_labels_y[i]), xytext=(parallel_labels_x[i]-375000, parallel_labels_y[i]-25000), zorder = 5, fontsize=10)
+		plt.annotate(str(abs(parallels_y[i]))+"$\!^\circ\!$"+"S", xy=(parallel_labels_x[i], parallel_labels_y[i]), xytext=(parallel_labels_x[i]-375000, parallel_labels_y[i]-25000), zorder = 5, fontsize=8)
 	
 	# ~ lccxlim_0, lccylim_0 = pyproj.transform(pcyl, plcc, -90, -70)
 	# ~ lccxlim_1, lccylim_1 = pyproj.transform(pcyl, plcc, -40, -40)
@@ -188,26 +185,18 @@ if proj == 'lcc':
 # ~ lons, lats = transformer.transform(XX, YY)
 
 # Title
-# ~ plt.title('AIRS granule 55 for 2019-07-26 at 30 km')
+plt.title('AIRS granule 55 for 2019-07-26 at 30 km')
 
 # Add colorbar to figure
-"""fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
+fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
 cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.025])
 # ~ fig.colorbar(cs, cmap='magma', orientation='horizontal',
 	# ~ label='Temperature / K', cax=cbar_ax, ticks=np.linspace(180,230,11))
 fig.colorbar(cs, cmap=qbocmap, orientation='horizontal',
-	label='Temperature Perturbation / K', cax=cbar_ax, ticks=np.linspace(-15,15,7))"""
-	
-# Vertical colorbar
-fig.subplots_adjust(bottom=0.05, top=0.95, right=0.88, left=0.12)
-cbar_ax = fig.add_axes([0.88, 0.1, 0.0125, 0.78])
-fig.colorbar(cs, cmap=qbocmap, orientation='vertical',
 	label='Temperature Perturbation / K', cax=cbar_ax, ticks=np.linspace(-15,15,7))
-cbar_ax.tick_params(labelsize=7) 
-cbar_ax.set_ylabel('Temperature Perturbation / K', fontsize=7)
 
 # Saving figure
-plt.savefig('testAIRS.png',dpi=1200)
+plt.savefig('testAIRS.png',dpi=600)
 
 plt.close()
 

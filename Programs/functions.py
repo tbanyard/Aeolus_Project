@@ -839,6 +839,56 @@ def topography_interpolation(lon, lat, topo_lon, topo_lat, topo_alt):
 		
 	return result
 	
+def era5_grid_interpolation(data_alt_new, ERA5_altitudes, ERA5_curr_data_v):
+	"""Runs a 1D interpolation for the ERA5 data onto the a 500m grid"""
+	
+	# Find the two levels the point is between
+	if type(data_alt_new[t]) == np.ma.core.MaskedConstant:
+		return None
+	nearest_alt = find_nearest(ERA5_altitudes, data_alt_new[t])
+	if nearest_alt < data_alt_new[t]:
+		# Stop program if plane is above highest altitude level (too high)
+		if nearest_alt == ERA5_altitudes[0]:
+			return None
+		next_nearest_alt = \
+		ERA5_altitudes[np.where(ERA5_altitudes == nearest_alt)[0][0]-1]
+		# ~ print(next_nearest_alt)
+		lev1 = np.where(ERA5_altitudes == nearest_alt)[0][0]
+		lev1_val = nearest_alt
+		lev2 = np.where(ERA5_altitudes == next_nearest_alt)[0][0]
+		lev2_val = next_nearest_alt
+	if nearest_alt > data_alt_new[t]:
+		# Stop program if plane is below lowest altitude level (too low)
+		if nearest_alt == ERA5_altitudes[136]:
+			return None
+		next_nearest_alt = \
+		ERA5_altitudes[np.where(ERA5_altitudes == nearest_alt)[0][0]+1]
+		lev1 = np.where(ERA5_altitudes == next_nearest_alt)[0][0]
+		lev1_val = next_nearest_alt
+		lev2 = np.where(ERA5_altitudes == nearest_alt)[0][0]
+		lev2_val = nearest_alt
+
+	# Setting corners of 3D box containing aircraft
+	lc1 = ERA5_curr_data_v[t_E][lev1][lat1][lon1] ###################
+	lc2 = ERA5_curr_data_v[t_E][lev1][lat1][lon2] #lat2lon1|lat2lon2#
+	lc3 = ERA5_curr_data_v[t_E][lev1][lat2][lon1] #(c3)    N    (c4)#
+	lc4 = ERA5_curr_data_v[t_E][lev1][lat2][lon2] #     W -+- E     #
+	uc1 = ERA5_curr_data_v[t_E][lev2][lat1][lon1] #(c1)    S    (c2)#
+	uc2 = ERA5_curr_data_v[t_E][lev2][lat1][lon2] #lat1lon1|lat1lon2#
+	uc3 = ERA5_curr_data_v[t_E][lev2][lat2][lon1] ###################
+	uc4 = ERA5_curr_data_v[t_E][lev2][lat2][lon2] # lev1 below lev2 #
+
+	# Interpolation in 3D: (lev, lat, lon)
+	x = [(lev1_val,lat1_val,lon1_val), (lev1_val,lat1_val,lon2_val), \
+	(lev1_val,lat2_val,lon1_val), (lev1_val,lat2_val,lon2_val), \
+	(lev2_val,lat1_val,lon1_val), (lev2_val,lat1_val,lon2_val), \
+	(lev2_val,lat2_val,lon1_val), (lev2_val,lat2_val,lon2_val)]
+	y = [lc1,lc2,lc3,lc4,uc1,uc2,uc3,uc4]
+	evaluate_at = \
+	[(data_alt_new[t], data_lat_new[t], data_lon_new[t])]
+	result = griddata(x, y, evaluate_at)
+	return result
+
 
 def ncload():
 	return
