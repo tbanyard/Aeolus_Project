@@ -53,8 +53,8 @@ pstartTime = datetime.now()
 os.chdir('..')
 
 # Find directory and read netCDF data
-strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/'
-infile = strdirectory + 'qbo-sep7th.nc' # Specifies data file
+strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/[qbo-date_timeseries.nc-files]/'
+infile = strdirectory + 'qbo-oct28th_10deg.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -67,7 +67,7 @@ whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=cus
 whitehatchescmap = whitehatchescmap_r.reversed()
 
 # Start element: For 01 July 2019 = 140; 01 Dec 2019 = 293
-wks = 12 # Number of weeks following RBS change
+wks = 19 # Number of weeks following RBS change # prev=12
 se = 293
 rbs_se = 629-se
 ee = rbs_se - 140 + wks*7
@@ -291,7 +291,7 @@ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'filesep7th_v3.png'
+pngsavename = 'filesep7th_v5.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")
