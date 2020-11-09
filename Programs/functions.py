@@ -568,7 +568,7 @@ def createAeolusQCnc(dbl, outfile):
 	root.institution = \
 	"University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
 	root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
-	root.Date_of_creation = "09 Jul 2020"
+	root.Date_of_creation = date.today().strftime("%m %b %Y")
 	dim_time = root.createDimension("time", len(rayleigh_time))
 	dim_RG = root.createDimension("RG", len(RG))
 	
