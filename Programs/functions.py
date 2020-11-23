@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import os
 import errno
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from scipy.interpolate import griddata
 import calendar
 import time
@@ -568,7 +568,7 @@ def createAeolusQCnc(dbl, outfile):
 	root.institution = \
 	"University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
 	root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
-	root.Date_of_creation = date.today().strftime("%m %b %Y")
+	root.Date_of_creation = date.today().strftime("%d %b %Y")
 	dim_time = root.createDimension("time", len(rayleigh_time))
 	dim_RG = root.createDimension("RG", len(RG))
 	
