@@ -54,7 +54,7 @@ os.chdir('..')
 
 # Find directory and read netCDF data
 strdirectory = '/home/tpb38/PhD/Bath/Aeolus_Project/Programs/[qbo-date_timeseries.nc-files]/'
-infile = strdirectory + 'qbo-oct28th_10deg.nc' # Specifies data file
+infile = strdirectory + 'qbo-jan13th2021_10deg.nc' # Specifies data file
 print('netCDF file:')
 print(infile, '\n')
 data = nc.Dataset(infile)
@@ -67,7 +67,7 @@ whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=cus
 whitehatchescmap = whitehatchescmap_r.reversed()
 
 # Start element: For 01 July 2019 = 140; 01 Dec 2019 = 293
-wks = 19 # Number of weeks following RBS change # prev=12
+wks = 30 # Number of weeks following RBS change # prev=12
 se = 293
 rbs_se = 629-se
 ee = rbs_se - 140 + wks*7
@@ -241,7 +241,7 @@ mask = plt.contour(x, y/1000, hatcharray, linestyles = 'dashed', linewidths = 1.
 # ~ mask = plt.imshow(hatcharray, aspect='auto', cmap=grayhatchescmap,
 	# ~ extent=[x_lims[0], x_lims[1], y_lims[0], y_lims[1]], interpolation=im_interp)
 ax1.xaxis_date() # Initialises date axis
-date_form = dates.DateFormatter('%b') # Sets date format
+date_form = dates.DateFormatter('%b %Y') # Sets date format
 ax1.xaxis.set_major_formatter(date_form)
 
 print("here")
@@ -274,7 +274,7 @@ plt.text(dates.date2num(RBS_datechange)+2, 27, "New \nRBS")
 # ~ ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 	# ~ which='both')
 	
-plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$5$^{{\circ}}$ Latitude 2019-2020')
+plt.title('Aeolus Zonal Mean U-component of HLOS Rayleigh Wind\n$\pm$10$^{{\circ}}$ Latitude 2019-2021')
 
 # Add colorbar to figure
 fig.subplots_adjust(bottom=0.225, right=0.88, left=0.12)
@@ -291,7 +291,7 @@ colorbar.ColorbarBase(cbar_ax, cmap = qbocmap, orientation='horizontal',
 
 ax1.grid(which='both', axis='y', color='k', linewidth=0.1, linestyle='dashed', zorder=2)
 
-pngsavename = 'filesep7th_v5.png'
+pngsavename = 'filesjan13th_v3.png'
 plt.savefig(pngsavename,dpi=300)
 print(os.getcwd())
 print("here")

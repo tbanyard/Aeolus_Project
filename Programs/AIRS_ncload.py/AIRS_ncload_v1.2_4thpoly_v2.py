@@ -57,7 +57,7 @@ whitehatchescmap_r = LinearSegmentedColormap('Whitehatchescmap', segmentdata=cus
 whitehatchescmap = whitehatchescmap_r.reversed()
 
 strdirectory = '/home/tpb38/PhD/Bath/AIRS/3d_airs_2019/207/'
-filename = 'airs_2019_207_055.nc'
+filename = 'airs_2019_207_190.nc'
 infile = strdirectory + str(filename) # Specifies data file
 data = nc.Dataset(infile)
 
@@ -79,9 +79,19 @@ data_temp = data.variables['ret_temp'][:]
 data.close()
 
 """Calculating perturbations"""
-data_temp2 = savgol_filter(data_temp, 55, 2, axis = 1)
-data_temp = data_temp - data_temp2
-data_temp = ndimage.gaussian_filter(data_temp, sigma=0.75, order=0)
+# ~ data_temp2 = savgol_filter(data_temp, 55, 2, axis = 1)
+# ~ data_temp = data_temp - data_temp2
+# ~ data_temp = ndimage.gaussian_filter(data_temp, sigma=0.75, order=0)
+
+"""Calculating 4th order polynomial perturbations"""
+perturbations = np.zeros((135, 90))
+print(np.shape(data_lon[:, 1]))
+for irow in range(90):
+	raw = data_temp[:,irow,10]
+	p = np.polyfit(np.arange(135), data_temp[:,irow,10], 4)
+	BG = np.polyval(p, np.arange(135))
+	iperts = raw-BG
+	perturbations[:, irow] = iperts
 
 """=========================================================="""
 """=======================Plotting==========================="""
@@ -109,7 +119,7 @@ if proj == 'cyl':
 
 	# Plotting
 	# ~ cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap='RdBu_r', zorder=2, vmin = 180, vmax = 230, levels=np.linspace(180,230,51))
-	cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
+	cs = plt.contourf(data_lon, data_lat, perturbations, cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
 	
 	# Fix axes
 	ax1.set_xticks([-100,-90,-80, -70, -60, -50])
@@ -145,7 +155,7 @@ if proj == 'lcc':
 
 	# Plotting
 	# ~ cs = plt.contourf(data_lon, data_lat, data_temp[:,:,10], cmap='magma', zorder=2, vmin = 180, vmax = 230, levels=np.linspace(180,230,51))
-	cs = map.contourf(data_lon, data_lat, data_temp[:,:,10], cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
+	cs = map.contourf(data_lon, data_lat, perturbations, cmap=qbocmap, zorder=2, vmin = -15, vmax = 15, levels=np.linspace(-15,15,13), extend='both')
 	cs2 = map.contourf(border_lons, border_lats, box, cmap = whitehatchescmap_r, zorder=4)
 	
 	for axis in ['top','bottom','left','right']: # Set axes thickness
@@ -208,8 +218,8 @@ cbar_ax.tick_params(labelsize=14)
 cbar_ax.yaxis.label.set_size(14)
 
 # Saving figure
-plt.savefig('testAIRS5.png',dpi=600)
-print("testAIRS5.png saved in: ", os.getcwd())
+plt.savefig('testAIRS8.png',dpi=600)
+print("testAIRS8.png saved in: ", os.getcwd())
 
 plt.close()
 

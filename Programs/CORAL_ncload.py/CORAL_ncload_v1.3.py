@@ -157,7 +157,7 @@ fig.colorbar(cs, cmap='magma', orientation='horizontal',
 	label='Temperature / K', cax=cbar_ax)
 			
 # Saving figure
-plt.savefig('testCORALv1.3.png',dpi=300)
+plt.savefig('testCORALv1.3.1.png',dpi=300)
 
 plt.close()
 
@@ -204,14 +204,21 @@ ax1.grid(color='gray', linestyle = 'dotted', linewidth = 0.25, axis='y',
 ax1.xaxis.set_minor_locator(dates.MinuteLocator(byminute=0))
 ax1.set_xlim([datetime(2019, 7, 26, 3, 0, 0), datetime(2019, 7, 26, 19, 0, 0)])
 
+# Label fontsize
+ax1.tick_params(labelsize=14)
+ax1.yaxis.label.set_size(14)
+ax1.xaxis.label.set_size(14)
+
 # Add colorbar to figure
-"""fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
+fig.subplots_adjust(bottom=0.3, right=0.88, left=0.12)
 cbar_ax = fig.add_axes([0.12, 0.15, 0.76, 0.025])
 fig.colorbar(cs, cmap=qbocmap, orientation='horizontal',
-	label='Temperature Perturbation / K', cax=cbar_ax)"""
+	label='Temperature Perturbation / K', cax=cbar_ax, extend='both')
+cbar_ax.tick_params(labelsize=14)
+cbar_ax.xaxis.label.set_size(14)
 			
 # Saving figure
-plt.savefig('testCORAL2v1.3.png',dpi=1200)
+plt.savefig('testCORAL2v1.3.1.png',dpi=1200)
 
 
 sys.exit()

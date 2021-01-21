@@ -26,7 +26,7 @@ os.putenv('CODA_DEFINITION',
 '/opt/anaconda3/envs/virtualenv/share/coda/definitions/AEOLUS-20191015.codadef')
 import coda
 import errno
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 import time
 from scipy.interpolate import griddata
 from scipy.io import savemat
@@ -230,12 +230,13 @@ print("Shape of z: ", np.shape(z))
 # Creating netCDF file
 
 
-root = nc.Dataset('qbo-oct28th_10deg.nc', 'w', format = "NETCDF4")
+root = nc.Dataset('qbo-jan13th2021_10deg.nc', 'w', format = "NETCDF4")
 root.contact = "T. P. Banyard, tpb38@bath.ac.uk"
 root.institution = \
 "University of Bath, Claverton Down, Bath, BA2 7AY, United Kingdom"
 root.title = "Daily mean of the Aeolus zonal wind projection over the Equator"
 root.Aeolus_data_source = "https://aeolus-ds.eo.esa.int"
+root.Date_of_creation = date.today().strftime("%d %b %Y")
 dim_time = root.createDimension("time", len(nc_dates))
 dim_alt = root.createDimension("altitude", len(alts))
 
